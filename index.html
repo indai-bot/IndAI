@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ind AI - Smart Automation Platform</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+
+<!-- LOGGED OUT VIEW -->
+<div id="loggedOutView">
+    <div class="header">
+        <div class="logo" onclick="resetToHome()">⚡ Ind AI</div>
+        <div class="nav-links">
+            <a onclick="resetToHome()" id="homeNavLink" class="active">Home</a>
+            <a onclick="showContact()" id="contactNavLink">Contact Us</a>
+            <button class="btn-login-header" onclick="showLoginPage()">Login</button>
+        </div>
+    </div>
+    <div id="loggedOutFixedHeading" class="page-heading-fixed"><h1 id="loggedOutHeadingText"></h1></div>
+    <div class="scrollable-content" id="loggedOutContent">
+        <div class="hero" id="homeSection">
+            <h1>Powering the Future with Artificial Intelligence</h1>
+            <p>Ind AI builds AI-powered solutions and APIs that help businesses automate, innovate and grow.</p>
+            <div class="hero-buttons">
+                <button class="btn-primary" onclick="showLoginPage()">Get Started</button>
+                <button class="btn-secondary" onclick="showLoginPage()">Explore Services</button>
+            </div>
+            <div class="features" id="featuresGrid"></div>
+        </div>
+    </div>
+    <div class="footer">
+        <div class="copyright">© 2024 Ind AI — Powering the Future with Artificial Intelligence</div>
+    </div>
+</div>
+
+<!-- LOGGED IN VIEW -->
+<div id="loggedInView" style="display: none;">
+    <div class="header">
+        <div class="logo" onclick="showDashboard()">⚡ Ind AI</div>
+        <div class="nav-links">
+            <a onclick="showDashboard()" class="nav-link" data-page="dashboard">Dashboard</a>
+            <a onclick="showJobs()" class="nav-link" data-page="jobs">Jobs</a>
+            <a onclick="showServices()" class="nav-link" data-page="services">Services</a>
+            <a onclick="showPricing()" class="nav-link" data-page="pricing">Pricing</a>
+            <a onclick="showApiDocument()" class="nav-link" data-page="api">API Document</a>
+            <a onclick="showContact()" class="nav-link" data-page="contact">Contact Us</a>
+            <div class="profile-container" onclick="event.stopPropagation(); toggleDropdownIn(event)">
+                <div class="profile-icon">👤</div>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item" onclick="showProfile()">👤 My Profile</div>
+                    <div class="dropdown-item" onclick="showNotifications()">🔔 Notification</div>
+                    <div class="dropdown-item" onclick="showTimeSavedReport()">⏱️ Time Saved Report</div>
+                    <div class="dropdown-item" onclick="showChangePasswordPage()">🔐 Change Password</div>
+                    <div class="dropdown-item" onclick="logout()">🚪 Logout</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="page-fixed-heading" class="page-heading-fixed"><h1 id="page-heading-text">User Dashboard</h1></div>
+    <div class="scrollable-content" id="appContent"></div>
+    <div id="changePasswordPage" class="scrollable-content" style="display: none;"></div>
+    <div id="registerPage" class="scrollable-content" style="display: none;"></div>
+    <div id="forgotPasswordPage" class="scrollable-content" style="display: none;"></div>
+    <div class="footer">
+        <div class="copyright">© 2024 Ind AI — All rights reserved.</div>
+    </div>
+</div>
+
+<!-- SERVICE MODAL -->
+<div id="serviceModal" class="modal-overlay">
+    <div class="modal">
+        <h2 id="serviceModalTitle">Service Name</h2>
+        <div id="serviceModalForm"></div>
+        <div class="modal-buttons">
+            <button class="btn-primary" onclick="processDynamicService()">Process →</button>
+            <button class="btn-secondary" onclick="closeModal('serviceModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/main.js"></script>
+<script src="js/contact.js"></script>
+</body>
+</html>

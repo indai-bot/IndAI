@@ -1,0 +1,16 @@
+# Environment variables
+.env
+
+# Database
+*.db
+*.db-journal
+
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
