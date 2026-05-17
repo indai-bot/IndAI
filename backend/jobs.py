@@ -107,6 +107,7 @@ async def get_all_jobs(client_id: int, current_user: dict = Depends(get_current_
     }
 
 @router.post("/")
+@router.post("/")
 async def add_job(req: AddJobRequest, current_user: dict = Depends(get_current_user)):
     conn = get_db()
     cursor = conn.cursor()
@@ -123,6 +124,7 @@ async def add_job(req: AddJobRequest, current_user: dict = Depends(get_current_u
     
     next_run = f"{req.job_date} {req.job_time}"
     
+    # Use req.estimated_hours directly (don't override with 1)
     cursor.execute('''
         INSERT INTO jobs (folder_id, name, subject, description, frequency, job_date, job_time, timezone, estimated_hours, next_run)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -133,7 +135,7 @@ async def add_job(req: AddJobRequest, current_user: dict = Depends(get_current_u
     conn.close()
     
     return {"success": True, "job_id": job_id, "message": "Job added"}
-
+    
 @router.put("/{job_id}")
 async def update_job(job_id: int, req: UpdateJobRequest, current_user: dict = Depends(get_current_user)):
     conn = get_db()

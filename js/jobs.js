@@ -1,6 +1,7 @@
 // ============ JOBS FUNCTIONS ==========
 let clientsData = [];
 let selectedClientId = null;
+let selectedFolderId = null;  // ← ADD THIS LINE
 let selectedJobId = null;
 let selectedJob = null;
 let selectedClient = null;
@@ -8,6 +9,8 @@ let currentJobLogs = [];
 let isRightPanelVisible = false;
 let isEditMode = false;
 let editingJobId = null;
+let uploadedFiles = [];
+let uploadedFilesData = [];
 
 async function showJobs() {
     document.getElementById('page-heading-text').innerHTML = 'Jobs';
@@ -258,10 +261,10 @@ function renderActivityLogsComplete() {
         tableBody.appendChild(row);
     });
     
-    // Auto-scroll to bottom to show latest log
+    // Scroll to TOP to show latest logs first
     const logContainer = document.querySelector('.activity-log-list');
     if (logContainer) {
-        logContainer.scrollTop = logContainer.scrollHeight;
+        logContainer.scrollTop = 0;
     }
 }
 
@@ -444,16 +447,20 @@ async function addJobToFolder(clientId, folderId) {
     const name = prompt("Enter job name:");
     if (name && name.trim()) {
         try {
+            // Get today's date and current time
+            const today = new Date().toISOString().slice(0,10);
+            const currentTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+            
             await apiCall('/jobs/', 'POST', {
                 folder_id: folderId,
                 name: name.trim(),
-                subject: name.trim(),
-                description: "New automation job",
+                subject: "Not Available",
+                description: "Not Available",
                 frequency: "Daily",
-                job_date: new Date().toISOString().slice(0,10),
-                job_time: "12:00",
+                job_date: today,
+                job_time: currentTime,
                 timezone: "Asia/Kolkata",
-                estimated_hours: 1
+                estimated_hours: 0
             });
             await renderClientsTreeComplete();
             alert(`Job "${name}" added!`);
@@ -479,34 +486,142 @@ function editSelectedJob() {
     if (!selectedJob) { alert('Select a job first'); return; }
     isEditMode = true;
     editingJobId = selectedJob.id;
+    uploadedFiles = selectedJob.supporting_files || [];
+    uploadedFilesData = [];
     
     const rightPanel = document.getElementById('rightCompletePanel');
     if (rightPanel) {
         rightPanel.innerHTML = `
             <div class="job-detail-complete-card">
                 <div class="job-detail-header">
-                    <h3 style="color:#0f172a;">✏️ Edit Job: ${selectedJob.name}</h3>
-                    <button onclick="closeEditMode()" style="background:#e2e8f0; border:none; padding:0.3rem 0.8rem; border-radius:8px; cursor:pointer;">✕ Close</button>
-                </div>
-                <div class="edit-job-form">
-                    <div class="full-width"><label>Job Title</label><input type="text" id="editJobTitle" value="${selectedJob.name}"></div>
-                    <div><label>Subject</label><input type="text" id="editJobSubject" value="${selectedJob.subject || selectedJob.name}"></div>
-                    <div><label>Estimated Hours</label><input type="number" step="0.5" id="editEstimatedHours" value="${selectedJob.estimated_hours || 1}" class="estimated-hours-input"><div class="time-saved-info">⏱️ Will save ${selectedJob.estimated_hours || 1} hours/run</div></div>
-                    <div class="full-width"><label>Description</label><textarea id="editJobDescription" rows="2">${selectedJob.description || ''}</textarea></div>
-                    <div class="full-width"><label>Supporting Files</label><div class="file-attach-edit" onclick="alert('File upload coming soon')">📂 Click to attach files</div></div>
-                    <div class="schedule-row-inline-edit">
-                        <div><label>Frequency</label><select id="editJobFrequency"><option ${selectedJob.frequency === 'Daily' ? 'selected' : ''}>Daily</option><option ${selectedJob.frequency === 'Weekly' ? 'selected' : ''}>Weekly</option><option ${selectedJob.frequency === 'Monthly' ? 'selected' : ''}>Monthly</option></select></div>
-                        <div><label>Date</label><input type="date" id="editJobDate" value="${selectedJob.job_date || ''}"></div>
-                        <div><label>Time</label><input type="time" id="editJobTime" value="${selectedJob.job_time || ''}"></div>
-                        <div><label>Timezone</label><select id="editJobTimezone"><option ${selectedJob.timezone === 'Asia/Kolkata' ? 'selected' : ''}>Asia/Kolkata</option><option ${selectedJob.timezone === 'America/New_York' ? 'selected' : ''}>America/New_York</option></select></div>
+                    <div class="job-header-info">
+                        <span class="job-detail-title">✏️ Edit Job: ${escapeHtml(selectedJob.name)}</span>
+                        <div class="job-path">${selectedClient?.name || 'Client'} \\ ${escapeHtml(selectedJob.name)}</div>
+                        <div class="job-created-line">Created: ${selectedJob.created_at || '-'}</div>
                     </div>
-                    <div class="full-width" style="display:flex; gap:1rem; margin-top:1rem;">
-                        <button class="detail-action-btn-complete edit" onclick="updateJobDetails()" style="background:#10b981; flex:1;">💾 Update Job</button>
-                        <button class="detail-action-btn-complete delete" onclick="closeEditMode()" style="background:#6b7280; flex:1;">Cancel</button>
+                    <div class="job-header-buttons">
+                        <button class="detail-action-btn-complete save" onclick="updateJobDetails()">💾 Save</button>
+                        <button class="detail-action-btn-complete return" onclick="cancelEdit()">↩️ Return</button>
+                        <button onclick="hideRightPanel()" class="close-panel-btn">✕</button>
+                    </div>
+                </div>
+                
+                <div class="edit-job-form">
+                    <!-- Row 1: Job Title - Full width -->
+                    <div class="full-width">
+                        <label>Job Title</label>
+                        <input type="text" id="editJobTitle" value="${escapeHtml(selectedJob.name)}">
+                    </div>
+                    
+                    <!-- Row 2: Subject (1st) + Est. Hours (2nd) + Attach Files (3rd) -->
+                    <div>
+                        <label>Subject</label>
+                        <input type="text" id="editJobSubject" value="${escapeHtml(selectedJob.subject || selectedJob.name)}">
+                    </div>
+                    <div>
+                        <label>Est. Hours</label>
+                        <input type="number" step="0.5" id="editEstimatedHours" value="${selectedJob.estimated_hours || 1}">
+                    </div>
+                    <div>
+                        <label id="attachFilesLabel">Attach Files ${uploadedFiles.length === 0 ? '(No files)' : `(${uploadedFiles.length} file(s)) <span class="download-link" onclick="downloadAttachedFiles()">Download</span>`}</label>
+                        <div class="file-attach-edit-small" onclick="document.getElementById('fileUploadInput').click()">
+                            📎 Click to attach files
+                        </div>
+                        <input type="file" id="fileUploadInput" multiple style="display:none;" onchange="handleFileUpload(this)">
+                    </div>
+                    
+                    <!-- Row 3: Description - Full width -->
+                    <div class="full-width">
+                        <label>Description</label>
+                        <textarea id="editJobDescription" rows="3">${escapeHtml(selectedJob.description || '')}</textarea>
+                    </div>
+                    
+                    <!-- Row 4: Schedule - Full width -->
+                    <div class="full-width schedule-inline">
+                        <div class="schedule-grid">
+                            <div><label>Frequency</label><select id="editJobFrequency"><option ${selectedJob.frequency === 'Daily' ? 'selected' : ''}>Daily</option><option ${selectedJob.frequency === 'Weekly' ? 'selected' : ''}>Weekly</option><option ${selectedJob.frequency === 'Monthly' ? 'selected' : ''}>Monthly</option></select></div>
+                            <div><label>Date</label><input type="date" id="editJobDate" value="${selectedJob.job_date || ''}"></div>
+                            <div><label>Time</label><input type="time" id="editJobTime" value="${selectedJob.job_time || ''}"></div>
+                            <div><label>Timezone</label><select id="editJobTimezone"><option ${selectedJob.timezone === 'Asia/Kolkata' ? 'selected' : ''}>Asia/Kolkata</option><option ${selectedJob.timezone === 'America/New_York' ? 'selected' : ''}>America/New_York</option></select></div>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
+    }
+}
+
+function handleFileUpload(input) {
+    const files = Array.from(input.files);
+    files.forEach(file => {
+        uploadedFiles.push(file.name);
+        uploadedFilesData.push(file);
+    });
+    
+    // Update the header label
+    const attachLabel = document.getElementById('attachFilesLabel');
+    if (attachLabel) {
+        if (uploadedFiles.length === 0) {
+            attachLabel.innerHTML = 'Attach Files (No files)';
+        } else {
+            attachLabel.innerHTML = `Attach Files (${uploadedFiles.length} file(s)) <span class="download-link" onclick="downloadAttachedFiles()">Download</span>`;
+        }
+    }
+    input.value = '';
+}
+
+// Download attached files
+async function downloadAttachedFiles() {
+    if (uploadedFilesData.length === 0) {
+        alert('No files to download');
+        return;
+    }
+    
+    if (uploadedFilesData.length === 1) {
+        // Single file - direct download
+        const file = uploadedFilesData[0];
+        const url = URL.createObjectURL(file);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } else {
+        // Multiple files - create zip
+        const JSZip = window.JSZip;
+        if (!JSZip) {
+            alert('JSZip library not loaded. Please refresh the page.');
+            return;
+        }
+        
+        const zip = new JSZip();
+        for (const file of uploadedFilesData) {
+            const arrayBuffer = await file.arrayBuffer();
+            zip.file(file.name, arrayBuffer);
+        }
+        
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'attached_files.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+}
+
+function cancelEdit() {
+    isEditMode = false;
+    editingJobId = null;
+    
+    if (selectedClientId && selectedFolderId && selectedJobId) {
+        selectJob(selectedClientId, selectedFolderId, selectedJobId);
+    } else {
+        hideRightPanel();
     }
 }
 
@@ -533,32 +648,97 @@ async function updateJobDetails() {
             job_date: newDate,
             job_time: newTime,
             timezone: newTimezone,
-            estimated_hours: newEstimatedHours
+            estimated_hours: newEstimatedHours,
+            supporting_files: uploadedFiles
         });
         
-        alert(`Job "${newTitle}" updated and needs verification!`);
-        await renderClientsTreeComplete();
-        closeEditMode();
+        alert(`Job "${newTitle}" updated!`);
         
-        if (selectedClientId && editingJobId) {
-            const client = clientsData.find(c => c.id === selectedClientId);
-            if (client) {
-                try {
-                    const data = await apiCall(`/jobs/all/${selectedClientId}`, 'GET');
-                    const folders = data.folders || [];
-                    for (const folder of folders) {
-                        const jobsData = await apiCall(`/jobs/${folder.id}`, 'GET');
-                        const job = jobsData.find(j => j.id === editingJobId);
-                        if (job) {
-                            await selectJob(selectedClientId, folder.id, editingJobId);
-                            break;
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error reselecting job:', e);
-                }
-            }
+        // Update selectedJob object with new values
+        selectedJob.name = newTitle;
+        selectedJob.subject = newSubject || newTitle;
+        selectedJob.description = newDescription;
+        selectedJob.frequency = newFrequency;
+        selectedJob.job_date = newDate;
+        selectedJob.job_time = newTime;
+        selectedJob.timezone = newTimezone;
+        selectedJob.estimated_hours = newEstimatedHours;
+        selectedJob.supporting_files = uploadedFiles;
+        
+        await renderClientsTreeComplete();
+        
+        // Refresh the right panel with updated job details (not edit mode)
+        isEditMode = false;
+        editingJobId = null;
+        
+        // Show job detail view with updated data
+        const client = clientsData.find(c => c.id === selectedClientId);
+        const today = new Date().toISOString().slice(0,10);
+        
+        const rightPanel = document.getElementById('rightCompletePanel');
+        if (rightPanel) {
+            rightPanel.innerHTML = `
+                <div class="job-detail-complete-card">
+                    <div class="job-detail-header">
+                        <div class="job-header-info">
+                            <span class="job-detail-title">${escapeHtml(selectedJob.name)}</span>
+                            <div class="job-path">${client?.name || 'Client'} \\ ${escapeHtml(selectedJob.name)}</div>
+                            <div class="job-created-line">Created: ${selectedJob.created_at || '-'}</div>
+                        </div>
+                        <div class="job-header-buttons">
+                            <button class="detail-action-btn-complete run" onclick="runSelectedJob()">▶ Run Now</button>
+                            <button class="detail-action-btn-complete edit" onclick="editSelectedJob()">✏️ Edit</button>
+                            <button class="detail-action-btn-complete delete" onclick="deleteSelectedJob()">🗑 Delete</button>
+                            <button class="detail-action-btn-complete send" onclick="sendJob()">📤 Send</button>
+                            <button onclick="hideRightPanel()" class="close-panel-btn">✕</button>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">Subject:</div>
+                        <div class="info-value">${escapeHtml(selectedJob.subject || 'No Subject')}</div>
+                    </div>
+                    
+                    <div class="schedule-section">
+                        <div class="schedule-label-main">Schedule:</div>
+                        <div class="schedule-values">
+                            <div class="schedule-item"><span class="schedule-item-label">FREQUENCY</span><span class="schedule-item-value">${selectedJob.frequency || 'Daily'}</span></div>
+                            <div class="schedule-item"><span class="schedule-item-label">DATE</span><span class="schedule-item-value">${selectedJob.job_date || '-'}</span></div>
+                            <div class="schedule-item"><span class="schedule-item-label">TIME</span><span class="schedule-item-value">${selectedJob.job_time || '-'}</span></div>
+                            <div class="schedule-item"><span class="schedule-item-label">TIMEZONE</span><span class="schedule-item-value">${selectedJob.timezone || 'Asia/Kolkata'}</span></div>
+                            <div class="schedule-item"><span class="schedule-item-label">NEXT RUN</span><span class="schedule-item-value">${selectedJob.next_run || '-'}</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-log-section">
+                        <div class="activity-log-header">
+                            <h4>📋 Job Activity Log</h4>
+                            <div class="activity-log-actions">
+                                <input type="date" class="log-date-filter-small" id="logDateFilterSmall" value="${today}" onchange="filterActivityLogsSmall()">
+                                <button class="download-log-btn" onclick="downloadActivityLog()">⬇ Download</button>
+                            </div>
+                        </div>
+                        <div class="activity-log-list">
+                            <table class="activity-log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Activity/Process</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activityLogTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
+        
+        await loadActivityLogs(selectedJobId);
+        showRightPanel();
+        
     } catch (error) {
         alert('Failed to update job: ' + error.message);
     }
@@ -600,6 +780,7 @@ async function selectJob(clientId, folderId, jobId) {
         if (!job) return;
         
         selectedClientId = clientId;
+        selectedFolderId = folderId;
         selectedJobId = jobId;
         selectedJob = job;
         
@@ -615,8 +796,8 @@ async function selectJob(clientId, folderId, jobId) {
                 <div class="job-detail-complete-card">
                     <div class="job-detail-header">
                         <div class="job-header-info">
-                            <span class="job-detail-title">${job.name}</span>
-                            <div class="job-path">${client?.name || 'Client'} \\ ${job.name}</div>
+                            <span class="job-detail-title">${escapeHtml(job.name)}</span>
+                            <div class="job-path">${client?.name || 'Client'} \\ ${escapeHtml(job.name)}</div>
                             <div class="job-created-line">Created: ${job.created_at || '-'}</div>
                         </div>
                         <div class="job-header-buttons">
@@ -644,6 +825,7 @@ async function selectJob(clientId, folderId, jobId) {
                         </div>
                     </div>
                     
+                    <!-- Activity Log Section -->
                     <div class="activity-log-section">
                         <div class="activity-log-header">
                             <h4>📋 Job Activity Log</h4>
@@ -692,14 +874,9 @@ function escapeHtml(text) {
 function closeEditMode() {
     isEditMode = false;
     editingJobId = null;
+    // Reselect the job to show details again
     if (selectedClientId && selectedJobId) {
-        showRightPanel();
-        if (selectedClientId && selectedJobId) {
-            const client = clientsData.find(c => c.id === selectedClientId);
-            if (client) {
-                location.reload();
-            }
-        }
+        selectJob(selectedClientId, selectedJobId);
     } else {
         hideRightPanel();
     }
@@ -826,6 +1003,7 @@ function resetRunButton(runBtn, originalText) {
 }
 
 // Add log at top (latest first)
+// Add log at top (latest first) and scroll to top
 function addActivityLogEntryTop(message, status) {
     const now = new Date();
     const date = now.toLocaleDateString('en-IN');
@@ -839,6 +1017,14 @@ function addActivityLogEntryTop(message, status) {
     };
     currentJobLogs.unshift(logEntry);
     renderActivityLogsComplete();
+    
+    // Scroll to TOP to show latest log
+    setTimeout(() => {
+        const logContainer = document.querySelector('.activity-log-list');
+        if (logContainer) {
+            logContainer.scrollTop = 0;
+        }
+    }, 50);
 }
 
 // Helper function to add log entry
@@ -866,11 +1052,34 @@ async function deleteSelectedJob() {
             await apiCall(`/jobs/${selectedJobId}`, 'DELETE');
             alert('Job deleted!');
             await renderClientsTreeComplete();
+            
+            // Clear selected job variables
             selectedJobId = null;
             selectedJob = null;
-            hideRightPanel();
-            document.getElementById('jobDetailTitle').innerText = 'Select a job';
-            document.getElementById('jobSubject').innerText = '-';
+            selectedFolderId = null;
+            
+            // Hide right panel and clear content safely
+            const rightPanel = document.getElementById('rightCompletePanel');
+            if (rightPanel) {
+                rightPanel.style.display = 'none';
+                // Clear innerHTML safely
+                while (rightPanel.firstChild) {
+                    rightPanel.removeChild(rightPanel.firstChild);
+                }
+            }
+            
+            // Reset job detail title safely
+            const jobDetailTitle = document.getElementById('jobDetailTitle');
+            if (jobDetailTitle) {
+                jobDetailTitle.innerText = 'Select a job';
+            }
+            
+            // Reset job subject safely
+            const jobSubject = document.getElementById('jobSubject');
+            if (jobSubject) {
+                jobSubject.innerText = '-';
+            }
+            
         } catch (error) {
             alert('Failed to delete job: ' + error.message);
         }

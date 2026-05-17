@@ -905,6 +905,24 @@ body {
     background: #7c3aed;
 }
 
+.detail-action-btn-complete.save {
+    background: #10b981;
+    color: white;
+}
+
+.detail-action-btn-complete.save:hover {
+    background: #059669;
+}
+
+.detail-action-btn-complete.return {
+    background: #3b82f6;
+    color: white;
+}
+
+.detail-action-btn-complete.return:hover {
+    background: #2563eb;
+}
+
 .close-panel-btn {
     background: #e2e8f0;
     border: none;
@@ -984,16 +1002,146 @@ body {
     color: #0f172a;
 }
 
-/* Activity Log Section - FIXED HEIGHT */
+/* Edit Job Form */
+.edit-job-form {
+    display: grid;
+    grid-template-columns: 1.2fr 0.5fr 0.7fr;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.edit-job-form .full-width {
+    grid-column: span 3;
+}
+
+.edit-job-form label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #475569;
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+.edit-job-form input, 
+.edit-job-form textarea, 
+.edit-job-form select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.75rem;
+}
+
+.edit-job-form textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* Est Hours and Attach Files in same row */
+.est-hours-attach-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.est-hours-input {
+    flex: 1;
+    min-width: 80px;
+}
+
+.attach-files-wrapper {
+    flex: 2;
+}
+
+.download-link {
+    color: #3b82f6;
+    cursor: pointer;
+    font-size: 0.7rem;
+    margin-left: 0.5rem;
+    text-decoration: underline;
+}
+
+.download-link:hover {
+    color: #2563eb;
+}
+
+.file-attach-edit-small {
+    border: 1px dashed #cbd5e1;
+    text-align: center;
+    border-radius: 8px;
+    background: #fafcfc;
+    cursor: pointer;
+    font-size: 0.7rem;
+    color: #64748b;
+    padding: 0.5rem;
+    display: block;
+    width: 100%;
+    margin-top: 0.3rem;
+}
+
+.file-attach-edit-small:hover {
+    border-color: #0f172a;
+    background: #f8fafc;
+}
+
+.files-list {
+    margin-top: 0.5rem;
+    max-height: 80px;
+    overflow-y: auto;
+}
+
+.file-placeholder {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.file-tag {
+    background: #e2e8f0;
+    color: #0f172a;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.55rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-right: 0.3rem;
+    margin-bottom: 0.3rem;
+}
+
+/* Schedule Grid */
+.schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.schedule-grid label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #475569;
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+.schedule-grid select,
+.schedule-grid input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.75rem;
+}
+
+/* Activity Log Section */
 .activity-log-section {
-    flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    margin-top: 0;
     height: 280px;
     max-height: 280px;
     min-height: 280px;
+    overflow: hidden;
+    margin-top: 0;
 }
 
 .activity-log-header {
@@ -1037,7 +1185,7 @@ body {
     font-size: 0.6rem;
 }
 
-/* Activity Log Table - FIXED HEIGHT WITH SCROLL */
+/* Activity Log Table */
 .activity-log-list {
     flex: 1;
     overflow-y: auto;
@@ -1102,46 +1250,37 @@ body {
     text-overflow: ellipsis;
 }
 
-/* Allow Activity column to wrap if needed */
 .activity-log-table td:nth-child(3) {
     white-space: normal;
     word-wrap: break-word;
 }
 
-/* Status column styling */
+/* Status row styling */
 .log-row-running td:first-child {
     border-left: 3px solid #f59e0b;
 }
-
 .log-row-running td:nth-child(4) {
     border-right: 3px solid #f59e0b;
 }
-
 .log-row-success td:first-child {
     border-left: 3px solid #10b981;
 }
-
 .log-row-success td:nth-child(4) {
     border-right: 3px solid #10b981;
 }
-
 .log-row-stopped td:first-child {
     border-left: 3px solid #ef4444;
 }
-
 .log-row-stopped td:nth-child(4) {
     border-right: 3px solid #ef4444;
 }
-
 .log-row-info td:first-child {
     border-left: 3px solid #3b82f6;
 }
-
 .log-row-info td:nth-child(4) {
     border-right: 3px solid #3b82f6;
 }
 
-/* Row hover effect */
 .activity-log-table tr:hover {
     background: #f8fafc;
 }

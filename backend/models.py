@@ -35,13 +35,13 @@ class AddFolderRequest(BaseModel):
 class AddJobRequest(BaseModel):
     folder_id: int
     name: str
-    subject: str
-    description: str
-    frequency: str
+    subject: str = "Not Available"
+    description: str = "Not Available"
+    frequency: str = "Daily"
     job_date: str
     job_time: str
-    timezone: str
-    estimated_hours: float
+    timezone: str = "Asia/Kolkata"
+    estimated_hours: float = 0  # Change from 1 to 0
 
 class UpdateJobRequest(BaseModel):
     name: str
