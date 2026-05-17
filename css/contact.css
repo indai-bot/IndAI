@@ -1,0 +1,72 @@
+/* Contact Page */
+.contact-page-simple {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.contact-two-column {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 2rem;
+}
+
+.contact-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.contact-info-row .contact-label {
+    color: #0f172a;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.contact-info-row .contact-value {
+    color: #475569;
+    font-size: 0.95rem;
+}
+
+.contact-form-card-simple {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #eef2f6;
+    padding: 1.5rem;
+}
+
+.form-group-simple {
+    margin-bottom: 1.2rem;
+}
+
+.form-group-simple label {
+    color: #0f172a;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.4rem;
+}
+
+.form-group-simple input, .form-group-simple textarea {
+    width: 100%;
+    padding: 0.7rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    color: #0f172a;
+}
+
+.contact-submit-simple {
+    width: 100%;
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 40px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.contact-submit-simple:hover {
+    background: #1e293b;
+}

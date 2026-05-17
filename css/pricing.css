@@ -1,0 +1,273 @@
+/* Pricing Page */
+.pricing-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.pricing-two-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.pricing-plans-column {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #eef2f6;
+    padding: 1.5rem;
+}
+
+.pricing-plans-column h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 1.2rem;
+    text-align: center;
+}
+
+.pricing-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.pricing-card {
+    background: #fafcfc;
+    border-radius: 16px;
+    border: 1px solid #eef2f6;
+    padding: 1rem 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.pricing-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    border-color: #e2e8f0;
+}
+
+.pricing-card.selected {
+    border: 2px solid #10b981;
+    background: #f0fdf4;
+}
+
+.pricing-card.popular {
+    border: 2px solid #0f172a;
+}
+
+.popular-badge {
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: #0f172a;
+    color: white;
+    padding: 0.2rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.6rem;
+}
+
+.plan-info {
+    flex: 1;
+}
+
+.plan-name {
+    color: #0f172a;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.plan-price {
+    color: #475569;
+    font-size: 0.85rem;
+}
+
+.current-plan-badge {
+    background: #fef3c7;
+    color: #d97706;
+    padding: 0.2rem 0.6rem;
+    border-radius: 30px;
+    font-size: 0.6rem;
+    margin-left: 0.5rem;
+}
+
+.choose-plan-btn {
+    background: #f1f5f9;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: 40px;
+    color: #475569;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
+}
+
+.choose-plan-btn:hover {
+    background: #0f172a;
+    color: white;
+}
+
+.pricing-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.add-credits-column {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #eef2f6;
+    padding: 1.2rem;
+}
+
+.add-credits-column h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eef2f6;
+    text-align: center;
+}
+
+.credits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.credit-card {
+    background: #fafcfc;
+    border-radius: 12px;
+    border: 1px solid #eef2f6;
+    padding: 0.8rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.credit-card:hover {
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    background: white;
+}
+
+.credit-amount {
+    color: #0f172a;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.credit-price {
+    color: #475569;
+    font-size: 0.75rem;
+    margin-top: 0.2rem;
+}
+
+.custom-credit-card {
+    background: #fef3c7;
+    border: 2px dashed #f59e0b;
+    border-radius: 12px;
+    padding: 0.8rem;
+    text-align: center;
+    cursor: pointer;
+}
+
+.custom-credit-card .credit-amount {
+    color: #d97706;
+    font-size: 0.8rem;
+}
+
+.buy-credits-btn {
+    width: 100%;
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 0.7rem;
+    border-radius: 40px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.buy-credits-btn:hover {
+    background: #1e293b;
+}
+
+/* Referral Column */
+.referral-column {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #eef2f6;
+    padding: 1.2rem;
+}
+
+.referral-column h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.referral-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.referral-table th {
+    text-align: left;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.referral-table td {
+    padding: 0.8rem 0.5rem;
+    font-size: 0.8rem;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.referral-table tr:last-child td {
+    border-bottom: none;
+}
+
+.referral-code {
+    font-family: monospace;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.copy-code-btn-table {
+    background: #f1f5f9;
+    border: none;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: #0f172a;
+    margin-left: 0.5rem;
+    transition: all 0.2s;
+}
+
+.copy-code-btn-table:hover {
+    background: #0f172a;
+    color: white;
+}
+
+.referral-value {
+    font-weight: 600;
+    color: #0f172a;
+}

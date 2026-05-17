@@ -1,0 +1,130 @@
+/* Login Page */
+.login-page-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem 0;
+}
+
+.login-two-column {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 2rem;
+}
+
+.login-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.login-info-row .login-label {
+    color: #0f172a;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.login-info-row .login-value {
+    color: #475569;
+    font-size: 0.95rem;
+}
+
+.login-form-card {
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #eef2f6;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.login-form-card h2 {
+    color: #0f172a;
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+}
+
+.login-form-group {
+    margin-bottom: 1rem;
+}
+
+.login-form-group label {
+    color: #0f172a;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.4rem;
+}
+
+.login-form-group input {
+    width: 100%;
+    padding: 0.7rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    color: #0f172a;
+}
+
+.remember-forgot-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    font-size: 0.8rem;
+    color: #475569;
+}
+
+.remember-forgot-row a {
+    color: #0f172a;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.login-submit-btn {
+    width: 100%;
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 40px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.login-submit-btn:hover {
+    background: #1e293b;
+}
+
+.register-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eef2f6;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.register-link a {
+    color: #0f172a;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Register & Forgot Password */
+.register-page-container, .forgot-password-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem 0;
+}
+
+.register-two-column, .forgot-two-column {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 2rem;
+}
+
+.register-info-list, .forgot-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}

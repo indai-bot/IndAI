@@ -1,0 +1,82 @@
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Common Card Styles */
+.dashboard-card, .service-card, .pricing-card, .credit-card {
+    transition: all 0.2s ease;
+}
+
+/* Common Table Styles */
+.usage-table, .upcoming-jobs-table, .referral-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Context Menu */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    min-width: 150px;
+    overflow: hidden;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #1e293b;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.context-menu-item:hover {
+    background: #f8fafc;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background: #eef2f6;
+    margin: 4px 0;
+}
+
+.options-btn {
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.options-btn:hover {
+    background: #e2e8f0;
+}

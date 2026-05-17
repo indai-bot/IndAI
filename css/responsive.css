@@ -1,0 +1,62 @@
+/* Responsive */
+@media (max-width: 1200px) {
+    .services-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 1000px) {
+    .pricing-two-column {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .jobs-complete-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 900px) {
+    .dashboard-top-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .services-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .scrollable-content {
+        padding: 0rem 1rem 1rem 1rem;
+    }
+    .header {
+        padding: 0.5rem 1rem;
+    }
+    .hero h1 {
+        font-size: 2rem;
+    }
+    .contact-two-column, .login-two-column, .profile-2col, .register-two-column, .forgot-two-column {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .edit-job-form {
+        grid-template-columns: 1fr;
+    }
+    .edit-job-form .full-width {
+        grid-column: span 1;
+    }
+    .schedule-row-single {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .services-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .credits-grid {
+        grid-template-columns: 1fr;
+    }
+    .job-detail-actions {
+        flex-wrap: wrap;
+    }
+}

@@ -1,0 +1,280 @@
+/* Dashboard Cards */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.dashboard-top-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    align-items: start;
+}
+
+.dashboard-bottom-row {
+    display: block;
+}
+
+.dashboard-card {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #eef2f6;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    border-color: #e2e8f0;
+}
+
+.dashboard-card h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.plan-summary p {
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.plan-summary strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Active Jobs Overview */
+.dashboard-card:nth-child(2) {
+    padding: 0.8rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-card:nth-child(2) h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-card:nth-child(2) .active-jobs-count {
+    font-size: 1.8rem;
+    margin-top: 0;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Referral Dashboard */
+.dashboard-card:nth-child(3) {
+    padding: 0.6rem;
+}
+
+.dashboard-card:nth-child(3) h3 {
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+}
+
+.dashboard-card:nth-child(3) th {
+    padding: 0.15rem 0;
+    font-size: 0.5rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.dashboard-card:nth-child(3) td {
+    padding: 0.2rem 0;
+    font-size: 0.6rem;
+    color: #334155;
+}
+
+.dashboard-card:nth-child(3) button {
+    padding: 0.1rem 0.3rem;
+    font-size: 0.45rem;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+/* Upcoming Jobs Table */
+.upcoming-jobs-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+}
+
+.upcoming-jobs-table th,
+.upcoming-jobs-table td {
+    padding: 0.5rem 0.3rem;
+    text-align: left;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.7rem;
+}
+
+.upcoming-jobs-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.job-date-filter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.job-date-filter input {
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.7rem;
+}
+
+.job-date-filter button {
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.65rem;
+}
+
+.edit-link {
+    color: #0f172a;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.view-all {
+    margin-top: 0.8rem;
+    display: inline-block;
+    color: #0f172a;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Usage Report Styles */
+.usage-report-container {
+    margin-top: 1rem;
+}
+
+.usage-date-filters {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.usage-date-filters input {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.7rem;
+}
+
+.usage-date-filters button {
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.7rem;
+}
+
+.usage-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.7rem;
+}
+
+.usage-table th,
+.usage-table td {
+    padding: 0.5rem 0.3rem;
+    text-align: left;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.usage-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.credit-positive {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.credit-negative {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.usage-summary {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.8rem;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.usage-summary-item {
+    flex: 1;
+    text-align: center;
+}
+
+.usage-summary-label {
+    font-size: 0.65rem;
+    color: #64748b;
+}
+
+.usage-summary-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Time Saved Report */
+.time-saved-summary {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 16px;
+}
+
+.time-saved-card {
+    flex: 1;
+    text-align: center;
+    padding: 0.8rem;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #eef2f6;
+}
+
+.time-saved-label {
+    font-size: 0.65rem;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.time-saved-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #10b981;
+}

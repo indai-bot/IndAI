@@ -1,0 +1,135 @@
+/* Profile Page */
+.profile-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #eef2f6;
+    overflow: hidden;
+}
+
+.profile-2col {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: 1.5rem;
+}
+
+.profile-left {
+    background: #f8fafc;
+    padding: 2rem 1.5rem;
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    background: #e2e8f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin: 0 auto 1rem;
+    color: #475569;
+    overflow: hidden;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-left h3 {
+    color: #0f172a;
+    margin-bottom: 0.25rem;
+}
+
+.profile-left p {
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.upload-photo-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 0.4rem 1rem;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    width: 100%;
+    color: #0f172a;
+    transition: all 0.2s;
+}
+
+.upload-photo-btn:hover {
+    background: #e2e8f0;
+}
+
+.profile-right {
+    padding: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-field {
+    margin-bottom: 1rem;
+}
+
+.form-field label {
+    color: #64748b;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+.form-field input, .form-field select {
+    width: 100%;
+    padding: 0.6rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #0f172a;
+}
+
+.profile-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn-save-profile {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 40px;
+    cursor: pointer;
+    flex: 1;
+    transition: all 0.2s;
+}
+
+.btn-save-profile:hover {
+    background: #059669;
+}
+
+.btn-delete-account {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 40px;
+    cursor: pointer;
+    flex: 1;
+    transition: all 0.2s;
+}
+
+.btn-delete-account:hover {
+    background: #dc2626;
+}
