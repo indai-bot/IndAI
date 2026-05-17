@@ -5,7 +5,7 @@ let selectedJobId = null;
 let selectedJob = null;
 let selectedClient = null;
 let currentJobLogs = [];
-let isRightPanelVisible = true;
+let isRightPanelVisible = false;
 let isEditMode = false;
 let editingJobId = null;
 
@@ -26,12 +26,12 @@ async function showJobs() {
                     <div class="clients-complete-search"><input type="text" id="clientSearchComplete" placeholder="Search Client..." onkeyup="filterClientsComplete()"></div>
                     <div class="clients-complete-tree" id="clientsTreeComplete"></div>
                 </div>
-                <div class="right-complete-panel">
+                <div class="right-complete-panel" id="rightCompletePanel" style="display: none;">
                     <div class="job-detail-complete-card">
                         <div class="breadcrumb-inside" id="breadcrumbInside"></div>
                         <div class="job-detail-header">
                             <span class="job-detail-title" id="jobDetailTitle">Select a job</span>
-                            <button onclick="toggleRightPanel()" style="background:#e2e8f0; border:none; padding:0.3rem 0.8rem; border-radius:8px;">✕</button>
+                            <button onclick="hideRightPanel()" style="background:#e2e8f0; border:none; padding:0.3rem 0.8rem; border-radius:8px; cursor:pointer;">✕</button>
                         </div>
                         <div class="job-detail-actions" id="jobDetailActions"></div>
                         <div class="job-info-section" id="jobInfoSection">
@@ -72,28 +72,30 @@ async function showJobs() {
     updateActiveNavLink('jobs');
 }
 
+function hideRightPanel() {
+    const rightPanel = document.getElementById('rightCompletePanel');
+    if (rightPanel) {
+        rightPanel.style.display = 'none';
+        isRightPanelVisible = false;
+    }
+    selectedJobId = null;
+    selectedJob = null;
+}
+
+function showRightPanel() {
+    const rightPanel = document.getElementById('rightCompletePanel');
+    if (rightPanel) {
+        rightPanel.style.display = 'flex';
+        isRightPanelVisible = true;
+    }
+}
+
 async function loadClientsData() {
     try {
-        clientsData = await apiCall('/clients', 'GET');
+        clientsData = await apiCall('/clients/', 'GET');
     } catch (error) {
         console.error('Error loading clients:', error);
         clientsData = [];
-    }
-}
-
-async function loadFolders(clientId) {
-    try {
-        return await apiCall(`/folders/${clientId}`, 'GET');
-    } catch (error) {
-        return [];
-    }
-}
-
-async function loadJobs(folderId) {
-    try {
-        return await apiCall(`/jobs/${folderId}`, 'GET');
-    } catch (error) {
-        return [];
     }
 }
 
@@ -113,7 +115,15 @@ async function renderClientsTreeComplete() {
         clientDiv.className = 'client-complete-node';
         clientDiv.id = `client-${client.id}`;
         
-        const folders = await loadFolders(client.id);
+        let folders = [];
+        let jobsByFolder = {};
+        try {
+            const data = await apiCall(`/jobs/all/${client.id}`, 'GET');
+            folders = data.folders || [];
+            jobsByFolder = data.jobs_by_folder || {};
+        } catch (error) {
+            console.error('Error loading jobs for client:', error);
+        }
         
         const clientHeader = document.createElement('div');
         clientHeader.className = 'client-complete-header';
@@ -142,7 +152,7 @@ async function renderClientsTreeComplete() {
         itemsDiv.style.display = 'block';
         
         for (const folder of folders) {
-            const jobs = await loadJobs(folder.id);
+            const jobs = jobsByFolder[folder.id] || [];
             
             const folderDiv = document.createElement('div');
             folderDiv.className = 'folder-complete-node';
@@ -220,40 +230,38 @@ function filterClientsComplete() {
     });
 }
 
-async function selectJob(clientId, folderId, jobId) {
-    try {
-        const jobs = await loadJobs(folderId);
-        const job = jobs.find(j => j.id === jobId);
-        if (!job) return;
+function renderActivityLogsComplete() {
+    const tableBody = document.getElementById('activityLogTableBody');
+    if (!tableBody) return;
+    
+    if (currentJobLogs.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:#94a3b8;">No activity logs yet</td></tr>';
+        return;
+    }
+    
+    tableBody.innerHTML = '';
+    currentJobLogs.forEach(log => {
+        let statusIcon = '';
+        if (log.status === 'running') statusIcon = '🟡';
+        else if (log.status === 'success') statusIcon = '✅';
+        else if (log.status === 'stopped') statusIcon = '⏹️';
+        else statusIcon = 'ℹ️';
         
-        selectedClientId = clientId;
-        selectedJobId = jobId;
-        selectedJob = job;
-        
-        const client = clientsData.find(c => c.id === clientId);
-        selectedClient = client;
-        
-        document.getElementById('breadcrumbInside').innerHTML = `${client?.name || 'Client'} \\ <span>${job.name}</span>`;
-        document.getElementById('jobDetailTitle').innerText = job.name;
-        document.getElementById('jobDetailActions').innerHTML = `
-            <button class="detail-action-btn-complete run" onclick="runSelectedJob()">▶ Run Now</button>
-            <button class="detail-action-btn-complete edit" onclick="editSelectedJob()">✏️ Edit</button>
-            <button class="detail-action-btn-complete delete" onclick="deleteSelectedJob()">🗑 Delete</button>
-            <button class="detail-action-btn-complete send" onclick="sendJob()">📤 Send</button>
+        const row = document.createElement('tr');
+        row.className = `log-row-${log.status}`;
+        row.innerHTML = `
+            <td>${log.date}</td>
+            <td>${log.time}</td>
+            <td>${log.message}</td>
+            <td>${statusIcon} ${log.status.toUpperCase()}</td>
         `;
-        document.getElementById('jobSubject').innerText = job.subject || job.name;
-        document.getElementById('jobCreatedInfo').innerText = `Created: ${job.created_at || '-'}`;
-        document.getElementById('supportingFilesList').innerHTML = '<span class="file-tag">No files</span>';
-        document.getElementById('frequencyValue').innerHTML = job.frequency || 'Daily';
-        document.getElementById('dateValue').innerHTML = job.job_date || '-';
-        document.getElementById('timeValue').innerHTML = job.job_time || '-';
-        document.getElementById('timezoneValue').innerHTML = job.timezone || 'Asia/Kolkata';
-        document.getElementById('nextRunValue').innerHTML = job.next_run || '-';
-        
-        await loadActivityLogs(jobId);
-        
-    } catch (error) {
-        console.error('Error selecting job:', error);
+        tableBody.appendChild(row);
+    });
+    
+    // Auto-scroll to bottom to show latest log
+    const logContainer = document.querySelector('.activity-log-list');
+    if (logContainer) {
+        logContainer.scrollTop = logContainer.scrollHeight;
     }
 }
 
@@ -277,17 +285,43 @@ function renderActivityLogsComplete() {
         return;
     }
     
-    container.innerHTML = '';
+    // Create table HTML
+    let tableHtml = `
+        <table class="activity-log-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Activity/Process</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
     currentJobLogs.forEach(log => {
-        const div = document.createElement('div');
-        div.className = `log-complete-entry ${log.status}`;
-        div.innerHTML = `
-            <div class="log-complete-time">📅 ${log.time}</div>
-            <div class="log-complete-message">${log.message}</div>
-            <div class="log-complete-duration">⏱ Duration: ${log.duration}</div>
+        let statusIcon = '';
+        if (log.status === 'running') statusIcon = '🟡';
+        else if (log.status === 'success') statusIcon = '✅';
+        else if (log.status === 'stopped') statusIcon = '⏹️';
+        else statusIcon = 'ℹ️';
+        
+        tableHtml += `
+            <tr class="log-row-${log.status}">
+                <td>${log.date}</td>
+                <td>${log.time}</td>
+                <td>${log.message}</td>
+                <td>${statusIcon} ${log.status.toUpperCase()}</td>
+            </tr>
         `;
-        container.appendChild(div);
     });
+    
+    tableHtml += `
+            </tbody>
+        </table>
+    `;
+    
+    container.innerHTML = tableHtml;
 }
 
 function filterActivityLogsSmall() {
@@ -322,21 +356,11 @@ function downloadActivityLog() {
     alert('Log downloaded!');
 }
 
-function toggleRightPanel() {
-    const rightPanel = document.querySelector('.right-complete-panel');
-    if (rightPanel) { isRightPanelVisible = !isRightPanelVisible; rightPanel.style.display = isRightPanelVisible ? 'flex' : 'none'; }
-}
-
-function showRightPanel() {
-    const rightPanel = document.querySelector('.right-complete-panel');
-    if (rightPanel) { isRightPanelVisible = true; rightPanel.style.display = 'flex'; }
-}
-
 async function addNewClient() {
     const name = prompt("Enter client name:");
     if (name && name.trim()) {
         try {
-            await apiCall('/clients', 'POST', { name: name.trim() });
+            await apiCall('/clients/', 'POST', { name: name.trim() });
             await loadClientsData();
             await renderClientsTreeComplete();
             alert(`Client "${name}" added!`);
@@ -369,6 +393,7 @@ function showFolderContextMenu(event, clientId, folderId) {
     menu.style.left = event.pageX + 'px'; menu.style.top = event.pageY + 'px';
     menu.innerHTML = `
         <div class="context-menu-item" onclick="addJobToFolder(${clientId}, ${folderId})">📄 Add Job</div>
+        <div class="context-menu-item" onclick="addFolderToFolder(${clientId}, ${folderId})">📁 Add Folder</div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item" onclick="deleteFolder(${clientId}, ${folderId})">🗑 Delete Folder</div>
     `;
@@ -380,7 +405,20 @@ async function addFolderToClient(clientId) {
     const name = prompt("Enter folder name:");
     if (name && name.trim()) {
         try {
-            await apiCall('/folders', 'POST', { client_id: clientId, name: name.trim() });
+            await apiCall('/folders/', 'POST', { client_id: clientId, name: name.trim() });
+            await renderClientsTreeComplete();
+            alert(`Folder "${name}" added!`);
+        } catch (error) {
+            alert('Failed to add folder: ' + error.message);
+        }
+    }
+}
+
+async function addFolderToFolder(clientId, folderId) {
+    const name = prompt("Enter folder name:");
+    if (name && name.trim()) {
+        try {
+            await apiCall('/folders/', 'POST', { client_id: clientId, parent_folder_id: folderId, name: name.trim() });
             await renderClientsTreeComplete();
             alert(`Folder "${name}" added!`);
         } catch (error) {
@@ -406,7 +444,7 @@ async function addJobToFolder(clientId, folderId) {
     const name = prompt("Enter job name:");
     if (name && name.trim()) {
         try {
-            await apiCall('/jobs', 'POST', {
+            await apiCall('/jobs/', 'POST', {
                 folder_id: folderId,
                 name: name.trim(),
                 subject: name.trim(),
@@ -442,7 +480,7 @@ function editSelectedJob() {
     isEditMode = true;
     editingJobId = selectedJob.id;
     
-    const rightPanel = document.querySelector('.right-complete-panel');
+    const rightPanel = document.getElementById('rightCompletePanel');
     if (rightPanel) {
         rightPanel.innerHTML = `
             <div class="job-detail-complete-card">
@@ -505,14 +543,19 @@ async function updateJobDetails() {
         if (selectedClientId && editingJobId) {
             const client = clientsData.find(c => c.id === selectedClientId);
             if (client) {
-                const folders = await loadFolders(selectedClientId);
-                for (const folder of folders) {
-                    const jobs = await loadJobs(folder.id);
-                    const job = jobs.find(j => j.id === editingJobId);
-                    if (job) {
-                        await selectJob(selectedClientId, folder.id, editingJobId);
-                        break;
+                try {
+                    const data = await apiCall(`/jobs/all/${selectedClientId}`, 'GET');
+                    const folders = data.folders || [];
+                    for (const folder of folders) {
+                        const jobsData = await apiCall(`/jobs/${folder.id}`, 'GET');
+                        const job = jobsData.find(j => j.id === editingJobId);
+                        if (job) {
+                            await selectJob(selectedClientId, folder.id, editingJobId);
+                            break;
+                        }
                     }
+                } catch (e) {
+                    console.error('Error reselecting job:', e);
                 }
             }
         }
@@ -521,12 +564,144 @@ async function updateJobDetails() {
     }
 }
 
+function renderActivityLogsComplete() {
+    const tableBody = document.getElementById('activityLogTableBody');
+    if (!tableBody) return;
+    
+    if (currentJobLogs.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:#94a3b8;">No activity logs yet</td></tr>';
+        return;
+    }
+    
+    tableBody.innerHTML = '';
+    currentJobLogs.forEach(log => {
+        let statusIcon = '';
+        if (log.status === 'running') statusIcon = '🟡';
+        else if (log.status === 'success') statusIcon = '✅';
+        else if (log.status === 'stopped') statusIcon = '⏹️';
+        else statusIcon = 'ℹ️';
+        
+        const row = document.createElement('tr');
+        row.className = `log-row-${log.status}`;
+        row.innerHTML = `
+            <td>${log.date}</td>
+            <td>${log.time}</td>
+            <td>${log.message}</td>
+            <td>${statusIcon} ${log.status.toUpperCase()}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+async function selectJob(clientId, folderId, jobId) {
+    try {
+        const jobs = await apiCall(`/jobs/${folderId}`, 'GET');
+        const job = jobs.find(j => j.id === jobId);
+        if (!job) return;
+        
+        selectedClientId = clientId;
+        selectedJobId = jobId;
+        selectedJob = job;
+        
+        const client = clientsData.find(c => c.id === clientId);
+        selectedClient = client;
+        
+        // Get today's date for filter
+        const today = new Date().toISOString().slice(0,10);
+        
+        const rightPanel = document.getElementById('rightCompletePanel');
+        if (rightPanel) {
+            rightPanel.innerHTML = `
+                <div class="job-detail-complete-card">
+                    <div class="job-detail-header">
+                        <div class="job-header-info">
+                            <span class="job-detail-title">${job.name}</span>
+                            <div class="job-path">${client?.name || 'Client'} \\ ${job.name}</div>
+                            <div class="job-created-line">Created: ${job.created_at || '-'}</div>
+                        </div>
+                        <div class="job-header-buttons">
+                            <button class="detail-action-btn-complete run" onclick="runSelectedJob()">▶ Run Now</button>
+                            <button class="detail-action-btn-complete edit" onclick="editSelectedJob()">✏️ Edit</button>
+                            <button class="detail-action-btn-complete delete" onclick="deleteSelectedJob()">🗑 Delete</button>
+                            <button class="detail-action-btn-complete send" onclick="sendJob()">📤 Send</button>
+                            <button onclick="hideRightPanel()" class="close-panel-btn">✕</button>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">Subject:</div>
+                        <div class="info-value">${escapeHtml(job.subject || 'No Subject')}</div>
+                    </div>
+                    
+                    <div class="schedule-section">
+                        <div class="schedule-label-main">Schedule:</div>
+                        <div class="schedule-values">
+                            <div class="schedule-item"><span class="schedule-item-label">FREQUENCY</span><span class="schedule-item-value">${job.frequency || 'Daily'}</span></div>
+                            <div class="schedule-item"><span class="schedule-item-label">DATE</span><span class="schedule-item-value">${job.job_date || '-'}</span></div>
+                            <div class="schedule-item"><span class="schedule-item-label">TIME</span><span class="schedule-item-value">${job.job_time || '-'}</span></div>
+                            <div class="schedule-item"><span class="schedule-item-label">TIMEZONE</span><span class="schedule-item-value">${job.timezone || 'Asia/Kolkata'}</span></div>
+                            <div class="schedule-item"><span class="schedule-item-label">NEXT RUN</span><span class="schedule-item-value">${job.next_run || '-'}</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-log-section">
+                        <div class="activity-log-header">
+                            <h4>📋 Job Activity Log</h4>
+                            <div class="activity-log-actions">
+                                <input type="date" class="log-date-filter-small" id="logDateFilterSmall" value="${today}" onchange="filterActivityLogsSmall()">
+                                <button class="download-log-btn" onclick="downloadActivityLog()">⬇ Download</button>
+                            </div>
+                        </div>
+                        <div class="activity-log-list">
+                            <table class="activity-log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Activity/Process</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activityLogTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        await loadActivityLogs(jobId);
+        showRightPanel();
+        
+    } catch (error) {
+        console.error('Error selecting job:', error);
+    }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
 function closeEditMode() {
     isEditMode = false;
     editingJobId = null;
-    showRightPanel();
     if (selectedClientId && selectedJobId) {
-        location.reload();
+        showRightPanel();
+        if (selectedClientId && selectedJobId) {
+            const client = clientsData.find(c => c.id === selectedClientId);
+            if (client) {
+                location.reload();
+            }
+        }
+    } else {
+        hideRightPanel();
     }
 }
 
@@ -545,19 +720,143 @@ async function verifyCurrentJob() {
 async function runSelectedJob() {
     if (!selectedJobId) { alert('Select a job first'); return; }
     
-    try {
-        const result = await apiCall(`/jobs/${selectedJobId}/run`, 'POST');
-        alert(result.message);
-        await loadActivityLogs(selectedJobId);
-        await renderClientsTreeComplete();
-        
-        const heading = document.getElementById('page-heading-text')?.innerHTML;
-        if (heading === 'User Dashboard') {
-            await showDashboard();
+    if (selectedJob && selectedJob.running) {
+        selectedJob.running = false;
+        addActivityLogEntryTop('⏹️ Process stopped by user', 'stopped');
+        const runBtn = document.querySelector('.detail-action-btn-complete.run');
+        if (runBtn) {
+            runBtn.innerText = '▶ Run Now';
+            runBtn.style.background = '#10b981';
+            runBtn.disabled = false;
         }
-    } catch (error) {
-        alert('Failed to run job: ' + error.message);
+        alert('Job stopped!');
+        return;
     }
+    
+    let currentCredits = 0;
+    try {
+        const stats = await apiCall('/dashboard/stats', 'GET');
+        currentCredits = stats.credits;
+        const estimatedCredits = Math.max(1, Math.min(10, Math.floor((selectedJob.description?.length || 10) / 10)));
+        
+        if (currentCredits < estimatedCredits) {
+            alert(`Insufficient credits! Need ${estimatedCredits}, Available: ${currentCredits}`);
+            return;
+        }
+        
+        selectedJob.credits = estimatedCredits;
+        selectedJob.running = true;
+        
+    } catch (error) {
+        alert('Failed to check credits: ' + error.message);
+        return;
+    }
+    
+    const runBtn = document.querySelector('.detail-action-btn-complete.run');
+    const originalText = runBtn?.innerText;
+    if (runBtn) {
+        runBtn.innerText = '⏹️ Stop';
+        runBtn.style.background = '#ef4444';
+    }
+    
+    currentJobLogs = [];
+    addActivityLogEntryTop('Process start huyi...', 'running');
+    scrollLogToBottom();
+    await sleep(1000);
+    if (!selectedJob.running) return resetRunButton(runBtn, originalText);
+    addActivityLogEntryTop('RPA read kar raha hai...', 'running');
+    scrollLogToBottom();
+    
+    await sleep(1000);
+    if (!selectedJob.running) return resetRunButton(runBtn, originalText);
+    addActivityLogEntryTop('RPA start ho raha hai...', 'running');
+    scrollLogToBottom();
+    
+    await sleep(1000);
+    if (!selectedJob.running) return resetRunButton(runBtn, originalText);
+    addActivityLogEntryTop('Supporting files and details collect kar raha hai...', 'running');
+    scrollLogToBottom();
+    
+    await sleep(1000);
+    if (!selectedJob.running) return resetRunButton(runBtn, originalText);
+    addActivityLogEntryTop('Program process ho raha hai...', 'running');
+    scrollLogToBottom();
+    
+    await sleep(1000);
+    if (!selectedJob.running) return resetRunButton(runBtn, originalText);
+    addActivityLogEntryTop('Process complete ho gaya hai!', 'success');
+    scrollLogToBottom();
+    
+    try {
+        await apiCall('/billing/add-credits', 'POST', { credits: -selectedJob.credits });
+    } catch (error) {
+        console.error('Credit deduction failed:', error);
+    }
+    
+    selectedJob.running = false;
+    const nextRun = new Date(Date.now() + 86400000).toLocaleString();
+    selectedJob.next_run = nextRun;
+    
+    if (runBtn) {
+        runBtn.innerText = '▶ Run Now';
+        runBtn.style.background = '#10b981';
+    }
+    
+    const timeSavedVal = selectedJob.estimated_hours || 1;
+    const heading = document.getElementById('page-heading-text')?.innerHTML;
+    if (heading === 'User Dashboard') {
+        await showDashboard();
+    }
+    
+    alert(`✅ Job "${selectedJob.name}" completed! Time saved: ${timeSavedVal} hours`);
+}
+
+function scrollLogToBottom() {
+    const logContainer = document.querySelector('.activity-log-list');
+    if (logContainer) {
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+}
+
+function resetRunButton(runBtn, originalText) {
+    if (runBtn) {
+        runBtn.innerText = originalText || '▶ Run Now';
+        runBtn.style.background = '#10b981';
+    }
+}
+
+// Add log at top (latest first)
+function addActivityLogEntryTop(message, status) {
+    const now = new Date();
+    const date = now.toLocaleDateString('en-IN');
+    const time = now.toLocaleTimeString('en-IN');
+    
+    const logEntry = {
+        date: date,
+        time: time,
+        message: message,
+        status: status
+    };
+    currentJobLogs.unshift(logEntry);
+    renderActivityLogsComplete();
+}
+
+// Helper function to add log entry
+function addActivityLogEntry(message, status) {
+    const time = new Date().toLocaleTimeString();
+    const logEntry = {
+        time: time,
+        message: message,
+        duration: '00:00:01',
+        status: status
+    };
+    currentJobLogs.unshift(logEntry);
+    renderActivityLogsComplete();
+}
+
+// Helper function for sleep
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function deleteSelectedJob() {
@@ -569,6 +868,7 @@ async function deleteSelectedJob() {
             await renderClientsTreeComplete();
             selectedJobId = null;
             selectedJob = null;
+            hideRightPanel();
             document.getElementById('jobDetailTitle').innerText = 'Select a job';
             document.getElementById('jobSubject').innerText = '-';
         } catch (error) {

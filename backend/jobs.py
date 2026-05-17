@@ -1,7 +1,5 @@
 import json
-import os
-import shutil
-import uuid
+import time
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Depends
 from backend.database import get_db
@@ -10,42 +8,6 @@ from backend.email_utils import send_email
 from backend.models import AddJobRequest, UpdateJobRequest, SendJobRequest
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
-
-# Base directory for process folder
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROCESS_DIR = os.path.join(BASE_DIR, "process")
-if not os.path.exists(PROCESS_DIR):
-    os.makedirs(PROCESS_DIR)
-
-def get_job_folders(user_id: int, job_id: int):
-    """Get job tool and output folder paths"""
-    user_folder = os.path.join(PROCESS_DIR, str(user_id))
-    jobs_folder = os.path.join(user_folder, "jobs")
-    job_folder = os.path.join(jobs_folder, str(job_id))
-    tool_folder = os.path.join(job_folder, "tool")
-    output_folder = os.path.join(job_folder, "output")
-    
-    os.makedirs(tool_folder, exist_ok=True)
-    os.makedirs(output_folder, exist_ok=True)
-    
-    return tool_folder, output_folder
-
-def clear_job_folders(user_id: int, job_id: int):
-    """Clear job tool and output folders"""
-    try:
-        tool_folder, output_folder = get_job_folders(user_id, job_id)
-        for folder in [tool_folder, output_folder]:
-            for filename in os.listdir(folder):
-                file_path = os.path.join(folder, filename)
-                try:
-                    if os.path.isfile(file_path):
-                        os.unlink(file_path)
-                    elif os.path.isdir(file_path):
-                        shutil.rmtree(file_path)
-                except Exception as e:
-                    print(f"Error deleting {file_path}: {e}")
-    except:
-        pass
 
 @router.get("/{folder_id}")
 async def get_jobs(folder_id: int, current_user: dict = Depends(get_current_user)):
@@ -82,6 +44,68 @@ async def get_jobs(folder_id: int, current_user: dict = Depends(get_current_user
     
     return result
 
+@router.get("/all/{client_id}")
+async def get_all_jobs(client_id: int, current_user: dict = Depends(get_current_user)):
+    """Get all folders and jobs in one API call - OPTIMIZED"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Verify client belongs to user
+    cursor.execute("SELECT id FROM clients WHERE id = ? AND user_id = ?", (client_id, current_user["id"]))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get all folders for this client
+    cursor.execute('''
+        SELECT f.id, f.name, f.parent_folder_id 
+        FROM folders f
+        WHERE f.client_id = ?
+        ORDER BY f.name
+    ''', (client_id,))
+    folders = cursor.fetchall()
+    
+    # Get all jobs for these folders
+    folder_ids = [f["id"] for f in folders]
+    jobs_by_folder = {}
+    
+    if folder_ids:
+        placeholders = ','.join('?' * len(folder_ids))
+        cursor.execute(f'''
+            SELECT j.*, j.folder_id FROM jobs j
+            WHERE j.folder_id IN ({placeholders})
+            ORDER BY j.name
+        ''', folder_ids)
+        jobs = cursor.fetchall()
+        
+        for job in jobs:
+            folder_id = job["folder_id"]
+            if folder_id not in jobs_by_folder:
+                jobs_by_folder[folder_id] = []
+            jobs_by_folder[folder_id].append({
+                "id": job["id"],
+                "name": job["name"],
+                "subject": job["subject"],
+                "description": job["description"],
+                "frequency": job["frequency"],
+                "job_date": job["job_date"],
+                "job_time": job["job_time"],
+                "timezone": job["timezone"],
+                "estimated_hours": job["estimated_hours"],
+                "credits": job["credits"],
+                "verified": bool(job["verified"]),
+                "running": bool(job["running"]),
+                "next_run": job["next_run"],
+                "created_at": job["created_at"]
+            })
+    
+    conn.close()
+    
+    return {
+        "folders": [{"id": f["id"], "name": f["name"], "parent_folder_id": f["parent_folder_id"]} for f in folders],
+        "jobs_by_folder": jobs_by_folder
+    }
+
 @router.post("/")
 async def add_job(req: AddJobRequest, current_user: dict = Depends(get_current_user)):
     conn = get_db()
@@ -107,9 +131,6 @@ async def add_job(req: AddJobRequest, current_user: dict = Depends(get_current_u
     job_id = cursor.lastrowid
     conn.commit()
     conn.close()
-    
-    # Create job folders
-    get_job_folders(current_user["id"], job_id)
     
     return {"success": True, "job_id": job_id, "message": "Job added"}
 
@@ -157,9 +178,6 @@ async def delete_job(job_id: int, current_user: dict = Depends(get_current_user)
     
     conn.commit()
     conn.close()
-    
-    # Clear job folders
-    clear_job_folders(current_user["id"], job_id)
     
     return {"success": True, "message": "Job deleted"}
 
@@ -229,7 +247,6 @@ async def run_job(job_id: int, current_user: dict = Depends(get_current_user)):
         conn.close()
         raise HTTPException(status_code=400, detail=f"Insufficient credits. Need {job['credits']}")
     
-    # Deduct credits
     new_credits = user["credits"] - job["credits"]
     cursor.execute("UPDATE users SET credits = ? WHERE id = ?", (new_credits, current_user["id"]))
     
@@ -237,15 +254,6 @@ async def run_job(job_id: int, current_user: dict = Depends(get_current_user)):
         INSERT INTO transactions (user_id, type, amount, description, service, balance)
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (current_user["id"], "usage", -job["credits"], f"Used for {job['name']}", "Job Execution", new_credits))
-    
-    # Get job folders
-    tool_folder, output_folder = get_job_folders(current_user["id"], job_id)
-    
-    # Clear output folder before run
-    for filename in os.listdir(output_folder):
-        file_path = os.path.join(output_folder, filename)
-        if os.path.isfile(file_path):
-            os.unlink(file_path)
     
     cursor.execute("UPDATE jobs SET running = 1 WHERE id = ?", (job_id,))
     
@@ -257,18 +265,7 @@ async def run_job(job_id: int, current_user: dict = Depends(get_current_user)):
     
     conn.commit()
     
-    # Simulate job execution (2 seconds)
-    import time
     time.sleep(2)
-    
-    # Create output file
-    output_filename = f"output_{uuid.uuid4().hex[:8]}.txt"
-    output_path = os.path.join(output_folder, output_filename)
-    with open(output_path, "w") as f:
-        f.write(f"Job: {job['name']}\n")
-        f.write(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"Description: {job['description']}\n")
-        f.write(f"Estimated hours saved: {job['estimated_hours']} hrs\n")
     
     next_run = (datetime.now() + timedelta(days=1)).strftime("%b %d, %Y %I:%M:%S %p")
     cursor.execute("UPDATE jobs SET running = 0, next_run = ? WHERE id = ?", (next_run, job_id))
@@ -315,7 +312,8 @@ async def send_job(job_id: int, req: SendJobRequest, current_user: dict = Depend
     conn.commit()
     conn.close()
     
-    send_email(req.email, f"Job Shared: {job['name']}", f"<h2>Job Shared</h2><p>From: {current_user['email']}</p>")
+    email_body = f"<h2>Job Shared: {job['name']}</h2><p>From: {current_user['email']}</p>"
+    send_email(req.email, f"Job Shared: {job['name']}", email_body)
     
     return {"success": True, "message": f"Job sent to {req.email}"}
 

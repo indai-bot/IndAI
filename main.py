@@ -37,10 +37,16 @@ INDEX_PATH = os.path.join(BASE_DIR, "index.html")
 CSS_DIR = os.path.join(BASE_DIR, "css")
 JS_DIR = os.path.join(BASE_DIR, "js")
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+PROCESS_DIR = os.path.join(BASE_DIR, "process")
+IMAGES_DIR = os.path.join(BASE_DIR, "images")
 
-# Create uploads directory if not exists
+# Create directories if not exists
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
+if not os.path.exists(PROCESS_DIR):
+    os.makedirs(PROCESS_DIR)
+if not os.path.exists(IMAGES_DIR):
+    os.makedirs(IMAGES_DIR)
 
 # ============ DATABASE INITIALIZATION ============
 @app.on_event("startup")
@@ -72,6 +78,8 @@ async def serve_index():
 app.mount("/css", StaticFiles(directory=CSS_DIR), name="css")
 app.mount("/js", StaticFiles(directory=JS_DIR), name="js")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+app.mount("/process", StaticFiles(directory=PROCESS_DIR), name="process")
+app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 
 # ============ HEALTH CHECK ENDPOINT ============
 @app.get("/health")

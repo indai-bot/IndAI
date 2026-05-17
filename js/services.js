@@ -3,6 +3,41 @@ let currentService = null;
 let currentServiceCredits = 0;
 let currentServiceNeedsTwoFiles = false;
 
+// Service icon mapping
+function getServiceIcon(serviceName) {
+    const icons = {
+        "Merge PDF": "🔗",
+        "Split PDF": "✂️",
+        "Compress PDF": "🗜️",
+        "PDF to Word": "📝",
+        "Word to PDF": "📄",
+        "PDF to Excel": "📊",
+        "Excel to PDF": "📈",
+        "PDF to PowerPoint": "📽️",
+        "PowerPoint to PDF": "🎬",
+        "JPG to PDF": "🖼️",
+        "PDF to JPG": "📸",
+        "Edit PDF": "✏️",
+        "Sign PDF": "🖊️",
+        "Watermark": "🏷️",
+        "Add Page Numbers": "🔢",
+        "Rotate PDF": "🔄",
+        "Unlock PDF": "🔓",
+        "Protect PDF": "🔒",
+        "OCR (Scan to Text)": "📠",
+        "Scan to PDF": "📡",
+        "HTML to PDF": "🌐",
+        "Repair PDF": "🔧",
+        "Compare PDF": "⚖️",
+        "Organize PDF": "📑",
+        "Crop PDF": "📐",
+        "Redact PDF": "⬛",
+        "Zip Files": "🗜️",
+        "Unzip Files": "📦"
+    };
+    return icons[serviceName] || "📄";
+}
+
 async function showServices() {
     document.getElementById('page-heading-text').innerHTML = 'Our Services';
     const headingContainer = document.getElementById('page-fixed-heading');
@@ -19,7 +54,7 @@ async function showServices() {
         services.forEach(s => {
             gridHtml += `
                 <div class="service-card" onclick="openServiceModal('${s.name}', ${s.needs_two_files}, ${s.credits})">
-                    <div class="service-thumbnail"><div class="service-thumb-icon">📄</div></div>
+                    <div class="service-thumbnail"><div class="service-thumb-icon">${getServiceIcon(s.name)}</div></div>
                     <div class="service-content"><h4>${s.name}</h4><p>${s.desc}</p></div>
                     <div class="service-footer"><div class="service-credits">${s.credits} Credit${s.credits > 1 ? 's' : ''}</div></div>
                 </div>
@@ -45,8 +80,8 @@ function openServiceModal(name, needsTwoFiles, credits) {
     
     let formHtml = `
         <div class="form-group-simple"><label>Select ${needsTwoFiles ? '2' : '1'} File(s)</label>
-        <input type="file" id="serviceFiles" accept=".pdf,.jpg,.jpeg,.png" ${needsTwoFiles ? 'multiple' : ''} style="width:100%; padding:0.5rem; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;"></div>
-        <div class="form-group-simple"><label>Output Name</label><input type="text" id="outputName" value="${name.toLowerCase().replace(/ /g, '_')}_output.pdf" style="width:100%; padding:0.5rem;"></div>
+        <input type="file" id="serviceFiles" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.pptx,.csv,.html,.txt,.zip" ${needsTwoFiles ? 'multiple' : ''} style="width:100%; padding:0.5rem; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;"></div>
+        <div class="form-group-simple"><label>Output Name</label><input type="text" id="outputName" value="${name.toLowerCase().replace(/ /g, '_')}_output" style="width:100%; padding:0.5rem;"></div>
     `;
     
     if (name === 'Split PDF') {
@@ -69,6 +104,9 @@ function openServiceModal(name, needsTwoFiles, credits) {
     if (name === 'Protect PDF' || name === 'Unlock PDF') {
         formHtml += `<div class="form-group-simple"><label>Password</label><input type="password" id="password" placeholder="Enter password" style="width:100%; padding:0.5rem;"></div>`;
     }
+    if (name === 'Sign PDF') {
+        formHtml += `<div class="form-group-simple"><label>Signer Name</label><input type="text" id="signerName" placeholder="Enter your name" style="width:100%; padding:0.5rem;"></div>`;
+    }
     if (name === 'Rotate PDF') {
         formHtml += `
             <div class="form-group-simple"><label>Rotation Angle</label>
@@ -87,6 +125,19 @@ function openServiceModal(name, needsTwoFiles, credits) {
             <div class="form-group-simple"><label>Crop Left (points)</label><input type="number" id="cropLeft" value="0" style="width:100%; padding:0.5rem;"></div>
             <div class="form-group-simple"><label>Crop Right (points)</label><input type="number" id="cropRight" value="0" style="width:100%; padding:0.5rem;"></div>
         `;
+    }
+    if (name === 'Organize PDF') {
+        formHtml += `
+            <div class="form-group-simple"><label>Page Order (e.g., 1,3,5,2,4)</label><input type="text" id="pageOrder" placeholder="1,3,5,2,4" style="width:100%; padding:0.5rem;"></div>
+            <div class="form-group-simple"><label>Delete Pages (optional)</label><input type="text" id="deletePages" placeholder="2,4,6" style="width:100%; padding:0.5rem;"></div>
+        `;
+    }
+    if (name === 'Redact PDF') {
+        formHtml += `<div class="form-group-simple"><label>Text to Redact</label><input type="text" id="redactText" placeholder="Text to remove" style="width:100%; padding:0.5rem;"></div>`;
+    }
+    if (name === 'Compare PDF') {
+        formHtml += `<div class="form-group-simple"><label>Select 2 PDF Files to Compare</label>
+        <input type="file" id="serviceFiles" accept=".pdf" multiple style="width:100%; padding:0.5rem; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;"></div>`;
     }
     
     form.innerHTML = formHtml;
@@ -115,7 +166,6 @@ async function processDynamicService() {
     
     closeModal('serviceModal');
     
-    // Determine endpoint based on service name
     let endpoint = '';
     let formData = new FormData();
     
@@ -138,42 +188,129 @@ async function processDynamicService() {
             endpoint = '/services/compress-pdf/process';
             formData.append('file', files[0]);
             break;
+        case 'PDF to Word':
+            endpoint = '/services/pdf-to-word/process';
+            formData.append('file', files[0]);
+            break;
+        case 'Word to PDF':
+            endpoint = '/services/word-to-pdf/process';
+            formData.append('file', files[0]);
+            break;
+        case 'PDF to Excel':
+            endpoint = '/services/pdf-to-excel/process';
+            formData.append('file', files[0]);
+            break;
+        case 'Excel to PDF':
+            endpoint = '/services/excel-to-pdf/process';
+            formData.append('file', files[0]);
+            break;
+        case 'PDF to PowerPoint':
+            endpoint = '/services/pdf-to-powerpoint/process';
+            formData.append('file', files[0]);
+            break;
+        case 'PowerPoint to PDF':
+            endpoint = '/services/powerpoint-to-pdf/process';
+            formData.append('file', files[0]);
+            break;
         case 'JPG to PDF':
             endpoint = '/services/jpg-to-pdf/process';
             for (let i = 0; i < files.length; i++) {
                 formData.append('files', files[i]);
             }
             break;
+        case 'PDF to JPG':
+            endpoint = '/services/pdf-to-jpg/process';
+            formData.append('file', files[0]);
+            break;
+        case 'Edit PDF':
+            endpoint = '/services/edit-pdf/process';
+            formData.append('file', files[0]);
+            break;
+        case 'Sign PDF':
+            endpoint = '/services/sign-pdf/process';
+            formData.append('file', files[0]);
+            formData.append('signature_name', document.getElementById('signerName')?.value || 'User');
+            break;
         case 'Watermark':
             endpoint = '/services/watermark/process';
             formData.append('file', files[0]);
             formData.append('watermark_text', document.getElementById('watermarkText')?.value || 'CONFIDENTIAL');
             break;
-        case 'Protect PDF':
-            endpoint = '/services/protect-pdf/process';
+        case 'Add Page Numbers':
+            endpoint = '/services/add-page-numbers/process';
             formData.append('file', files[0]);
-            formData.append('password', document.getElementById('password')?.value || '');
-            break;
-        case 'Unlock PDF':
-            endpoint = '/services/unlock-pdf/process';
-            formData.append('file', files[0]);
-            formData.append('password', document.getElementById('password')?.value || '');
             break;
         case 'Rotate PDF':
             endpoint = '/services/rotate-pdf/process';
             formData.append('file', files[0]);
             formData.append('rotation', document.getElementById('rotation')?.value || '90');
             break;
-        case 'Add Page Numbers':
-            endpoint = '/services/add-page-numbers/process';
+        case 'Unlock PDF':
+            endpoint = '/services/unlock-pdf/process';
+            formData.append('file', files[0]);
+            formData.append('password', document.getElementById('password')?.value || '');
+            break;
+        case 'Protect PDF':
+            endpoint = '/services/protect-pdf/process';
+            formData.append('file', files[0]);
+            formData.append('password', document.getElementById('password')?.value || '');
+            break;
+        case 'OCR (Scan to Text)':
+            endpoint = '/services/ocr/process';
+            formData.append('file', files[0]);
+            break;
+        case 'Scan to PDF':
+            endpoint = '/services/scan-to-pdf/process';
+            formData.append('file', files[0]);
+            break;
+        case 'HTML to PDF':
+            endpoint = '/services/html-to-pdf/process';
+            formData.append('file', files[0]);
+            break;
+        case 'Repair PDF':
+            endpoint = '/services/repair-pdf/process';
+            formData.append('file', files[0]);
+            break;
+        case 'Compare PDF':
+            endpoint = '/services/compare-pdf/process';
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            break;
+        case 'Organize PDF':
+            endpoint = '/services/organize-pdf/process';
+            formData.append('file', files[0]);
+            formData.append('page_order', document.getElementById('pageOrder')?.value || '');
+            formData.append('delete_pages', document.getElementById('deletePages')?.value || '');
+            break;
+        case 'Crop PDF':
+            endpoint = '/services/crop-pdf/process';
+            formData.append('file', files[0]);
+            formData.append('top', document.getElementById('cropTop')?.value || '0');
+            formData.append('bottom', document.getElementById('cropBottom')?.value || '0');
+            formData.append('left', document.getElementById('cropLeft')?.value || '0');
+            formData.append('right', document.getElementById('cropRight')?.value || '0');
+            break;
+        case 'Redact PDF':
+            endpoint = '/services/redact-pdf/process';
+            formData.append('file', files[0]);
+            formData.append('redact_text', document.getElementById('redactText')?.value || '');
+            break;
+        case 'Zip Files':
+            endpoint = '/services/zip-files/process';
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            break;
+        case 'Unzip Files':
+            endpoint = '/services/unzip-files/process';
             formData.append('file', files[0]);
             break;
         default:
-            alert(`${currentService} service is coming soon!`);
+            alert(`${currentService} service is being processed!`);
             return;
     }
     
-    // Show loading
     const processBtn = document.querySelector('#serviceModal .btn-primary');
     const originalText = processBtn?.innerText;
     if (processBtn) processBtn.innerText = 'Processing...';
@@ -192,12 +329,18 @@ async function processDynamicService() {
             throw new Error(error.detail || 'Processing failed');
         }
         
-        // Download the file
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const outputName = document.getElementById('outputName')?.value || 'output.pdf';
+        
+        let outputName = document.getElementById('outputName')?.value || 'output';
+        const contentDisposition = response.headers.get('content-disposition');
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?([^"]+)"?/);
+            if (match) outputName = match[1];
+        }
+        
         a.download = outputName;
         document.body.appendChild(a);
         a.click();
@@ -206,7 +349,6 @@ async function processDynamicService() {
         
         alert(`✅ ${currentService} completed successfully! -${currentServiceCredits} credits`);
         
-        // Refresh dashboard to update credits
         const heading = document.getElementById('page-heading-text')?.innerHTML;
         if (heading === 'User Dashboard') {
             await showDashboard();
