@@ -1,7 +1,7 @@
 /* Jobs Section */
 .jobs-container-complete {
     max-width: 1600px;
-    margin: 0 auto;
+    margin: 1.5rem;
 }
 
 .jobs-complete-layout {
@@ -637,13 +637,34 @@
     font-size: 0.6rem;
 }
 
-/* Activity Log Table */
+/* Activity Log Table Container with Scrollbar */
 .activity-log-list {
     flex: 1;
     overflow-y: auto;
     overflow-x: auto;
-    height: calc(280px - 50px);
-    max-height: calc(280px - 50px);
+    height: calc(200px - 50px);
+    max-height: calc(200px - 50px);
+    min-height: calc(200px - 50px);
+}
+
+/* Force scrollbar to always show for better UX */
+.activity-log-list::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.activity-log-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.activity-log-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.activity-log-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .activity-log-table {

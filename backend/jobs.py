@@ -107,7 +107,6 @@ async def get_all_jobs(client_id: int, current_user: dict = Depends(get_current_
     }
 
 @router.post("/")
-@router.post("/")
 async def add_job(req: AddJobRequest, current_user: dict = Depends(get_current_user)):
     conn = get_db()
     cursor = conn.cursor()
@@ -124,18 +123,18 @@ async def add_job(req: AddJobRequest, current_user: dict = Depends(get_current_u
     
     next_run = f"{req.job_date} {req.job_time}"
     
-    # Use req.estimated_hours directly (don't override with 1)
+    # New job added with verified = 0 (not verified)
     cursor.execute('''
-        INSERT INTO jobs (folder_id, name, subject, description, frequency, job_date, job_time, timezone, estimated_hours, next_run)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (req.folder_id, req.name, req.subject, req.description, req.frequency, req.job_date, req.job_time, req.timezone, req.estimated_hours, next_run))
+        INSERT INTO jobs (folder_id, name, subject, description, frequency, job_date, job_time, timezone, estimated_hours, next_run, verified)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (req.folder_id, req.name, req.subject, req.description, req.frequency, req.job_date, req.job_time, req.timezone, req.estimated_hours, next_run, 0))
     
     job_id = cursor.lastrowid
     conn.commit()
     conn.close()
     
     return {"success": True, "job_id": job_id, "message": "Job added"}
-    
+
 @router.put("/{job_id}")
 async def update_job(job_id: int, req: UpdateJobRequest, current_user: dict = Depends(get_current_user)):
     conn = get_db()
@@ -154,16 +153,20 @@ async def update_job(job_id: int, req: UpdateJobRequest, current_user: dict = De
     
     next_run = f"{req.job_date} {req.job_time}"
     
+    # Calculate credits based on description and estimated hours
+    estimated_credits = max(1, min(20, int(len(req.description) / 10) + int(req.estimated_hours)))
+    
+    # Update job with verified = 1 and credits calculated
     cursor.execute('''
         UPDATE jobs 
-        SET name = ?, subject = ?, description = ?, frequency = ?, job_date = ?, job_time = ?, timezone = ?, estimated_hours = ?, verified = 0, credits = NULL, next_run = ?
+        SET name = ?, subject = ?, description = ?, frequency = ?, job_date = ?, job_time = ?, timezone = ?, estimated_hours = ?, verified = 1, credits = ?, next_run = ?
         WHERE id = ?
-    ''', (req.name, req.subject, req.description, req.frequency, req.job_date, req.job_time, req.timezone, req.estimated_hours, next_run, job_id))
+    ''', (req.name, req.subject, req.description, req.frequency, req.job_date, req.job_time, req.timezone, req.estimated_hours, estimated_credits, next_run, job_id))
     
     conn.commit()
     conn.close()
     
-    return {"success": True, "message": "Job updated"}
+    return {"success": True, "message": "Job updated and verified", "credits": estimated_credits}
 
 @router.delete("/{job_id}")
 async def delete_job(job_id: int, current_user: dict = Depends(get_current_user)):
@@ -238,9 +241,10 @@ async def run_job(job_id: int, current_user: dict = Depends(get_current_user)):
         conn.close()
         raise HTTPException(status_code=404, detail="Job not found")
     
+    # Check if job is verified
     if not job["verified"]:
         conn.close()
-        raise HTTPException(status_code=400, detail="Job not verified")
+        raise HTTPException(status_code=400, detail="Job not verified. Please edit and save the job to verify it first.")
     
     cursor.execute("SELECT credits FROM users WHERE id = ?", (current_user["id"],))
     user = cursor.fetchone()

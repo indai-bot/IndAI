@@ -17,6 +17,7 @@ from backend.notifications import router as notifications_router
 from backend.dashboard import router as dashboard_router
 from backend.api_keys import router as api_keys_router
 from backend.contact import router as contact_router
+from backend.ai_validator import router as ai_validator_router
 
 load_dotenv()
 
@@ -65,6 +66,7 @@ app.include_router(notifications_router)
 app.include_router(dashboard_router)
 app.include_router(api_keys_router)
 app.include_router(contact_router)
+app.include_router(ai_validator_router)
 
 # ============ SERVE STATIC FILES ============
 @app.get("/")

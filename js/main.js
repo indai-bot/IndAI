@@ -182,7 +182,7 @@ let currentApiKeyGlobal = null;
 
 async function generateApiKey() {
     try {
-        const result = await apiCall('/api-keys', 'POST');
+        const result = await apiCall('/api-keys/', 'POST');
         currentApiKeyGlobal = result.api_key;
         document.getElementById('api-key-value').innerText = result.api_key;
         document.getElementById('api-key-display').style.display = 'flex';

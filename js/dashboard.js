@@ -1,12 +1,17 @@
 // ============ DASHBOARD FUNCTIONS ==========
 async function showDashboard() {
     const today = new Date().toISOString().slice(0,10);
-    document.getElementById('page-heading-text').innerHTML = 'User Dashboard';
-    const headingContainer = document.getElementById('page-fixed-heading');
-    if (headingContainer && !headingContainer.querySelector('hr')) {
-        const hr = document.createElement('hr');
-        headingContainer.appendChild(hr);
+    
+    // Hide header only on dashboard page
+    const pageHeading = document.getElementById('page-heading-text');
+    if (pageHeading) {
+        pageHeading.style.display = 'none';
     }
+    const headingContainer = document.getElementById('page-fixed-heading');
+    if (headingContainer) {
+        headingContainer.style.display = 'none';
+    }
+    
     document.getElementById('appContent').style.display = 'block';
     document.getElementById('changePasswordPage').style.display = 'none';
     
@@ -20,54 +25,57 @@ async function showDashboard() {
                         <h3>📊 Plan & Credits Summary</h3>
                         <div class="plan-summary">
                             <p><strong>Current Plan:</strong> ${stats.current_plan === 'free' ? 'Free Plan' : stats.current_plan === 'daily' ? 'Daily Plan' : stats.current_plan === 'monthly' ? 'Monthly Plan' : 'Yearly Plan'}</p>
-                            <p>Credits Available: <strong>${stats.credits} Credits</strong></p>
-                            <p style="color:#f59e0b; font-size:0.75rem;">Reset in: 12 hours</p>
-                        </div>
-                        <div class="button-group" style="margin-top:0.8rem;">
-                            <button class="btn-outline" onclick="showPricing()">💰 Upgrade Plan</button>
+                            <p><strong>Credits Available:</strong> ${stats.credits} Credits</p>
+                            <p style="color:#f59e0b;"><strong>Reset in:</strong> 12 hours</p>
                         </div>
                     </div>
                     <div class="dashboard-card">
                         <h3>⚡ Active Jobs Overview</h3>
-                        <div class="active-jobs-count">${stats.active_jobs}</div>
-                        <div>Active Jobs Running</div>
-                        <div style="margin-top:0.3rem; font-size:0.7rem; color:#64748b;">Total Jobs: ${stats.total_jobs}</div>
+                        <div class="active-jobs-info">
+                            <div class="active-jobs-count">${stats.active_jobs}</div>
+                            <div>Active Jobs Running</div>
+                            <div style="margin-top:0.2rem; font-size:0.6rem; color:#64748b;">Total Jobs: ${stats.total_jobs}</div>
+                        </div>
                     </div>
                     <div class="dashboard-card">
                         <h3>🎁 Referral Dashboard</h3>
-                        <table style="width:100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="border-bottom: 1px solid #e2e8f0;">
-                                    <th style="text-align: left; padding: 0.2rem 0; font-size: 0.5rem; font-weight: 600; color: #64748b;">REFERRAL ID</th>
-                                    <th style="text-align: left; padding: 0.2rem 0; font-size: 0.5rem; font-weight: 600; color: #64748b;">CREDIT PER REFERRAL</th>
-                                    <th style="text-align: left; padding: 0.2rem 0; font-size: 0.5rem; font-weight: 600; color: #64748b;">TOTAL EARNED</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td style="padding: 0.3rem 0; font-size: 0.6rem;"><span style="font-family: monospace;">USER123456</span><button onclick="copyReferralLink()" style="background:#e2e8f0; border:none; padding:0.1rem 0.3rem; border-radius:20px; margin-left:0.3rem; cursor:pointer;">Copy</button></td>
-                                    <td style="padding: 0.3rem 0; font-size: 0.6rem;">500 Credits</td>
-                                    <td style="padding: 0.3rem 0; font-size: 0.6rem;">12,500 Credits</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="referral-rows">
+                            <div class="referral-row">
+                                <span class="referral-row-label">REFERRAL ID</span>
+                                <span class="referral-row-value">USER123456</span>
+                            </div>
+                            <div class="referral-row">
+                                <span class="referral-row-label">CREDIT PER REFERRAL</span>
+                                <span class="referral-row-value">500 Credits</span>
+                            </div>
+                            <div class="referral-row">
+                                <span class="referral-row-label">TOTAL EARNED</span>
+                                <span class="referral-row-value">12,500 Credits</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="dashboard-bottom-row">
                     <div class="dashboard-card">
                         <div class="job-date-filter">
                             <h3>📋 Upcoming Scheduled Jobs</h3>
-                            <div>
-                                <input type="date" id="upcomingJobsDate" value="${today}">
-                                <button onclick="filterUpcomingJobs()">Filter</button>
-                            </div>
+                            <input type="date" id="upcomingJobsDate" value="${today}" onchange="filterUpcomingJobs()">
                         </div>
-                        <table class="upcoming-jobs-table" id="upcomingJobsTable">
-                            <thead>
-                                <tr><th>Client Name</th><th>Job Name</th><th>Frequency</th><th>Schedule Date</th><th>Schedule Time</th><th>Actions</th></tr>
-                            </thead>
-                            <tbody id="upcomingJobsBody"></tbody>
-                        </table>
+                        <div class="upcoming-jobs-table-container">
+                            <table class="upcoming-jobs-table" id="upcomingJobsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>Job Name</th>
+                                        <th>Frequency</th>
+                                        <th>Schedule Date</th>
+                                        <th>Schedule Time</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="upcomingJobsBody"></tbody>
+                            </table>
+                        </div>
                         <div class="view-all" onclick="showJobs()">View All Jobs →</div>
                     </div>
                 </div>
@@ -90,14 +98,14 @@ async function renderUpcomingJobs(date) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No jobs scheduled for this date</td></tr>';
         } else {
             tbody.innerHTML = jobs.map(job => `
-                <tr>
-                    <td>${job.client_name}</td>
-                    <td>${job.job_name}</td>
-                    <td>${job.frequency}</td>
-                    <td>${job.date}</td>
-                    <td>${job.time}</td>
-                    <td><a onclick="showJobs()" class="edit-link">Edit</a></td>
-                </tr>
+                 <tr>
+                     <td>${job.client_name}</td>
+                     <td>${job.job_name}</td>
+                     <td>${job.frequency}</td>
+                     <td>${job.date}</td>
+                     <td>${job.time}</td>
+                     <td><a onclick="showJobs()" class="edit-link">Edit</a></td>
+                  </tr>
             `).join('');
         }
     } catch (error) {
@@ -110,13 +118,18 @@ async function filterUpcomingJobs() {
     if (date) await renderUpcomingJobs(date);
 }
 
-function copyReferralLink() { 
-    navigator.clipboard.writeText('https://ind.ai/ref/USER123456').then(() => alert('Referral link copied!')); 
-}
-
 function showChangePasswordPage() {
-    document.getElementById('page-heading-text').innerHTML = 'Change Password';
+    // Show header for change password page
+    const pageHeading = document.getElementById('page-heading-text');
+    if (pageHeading) {
+        pageHeading.style.display = 'block';
+    }
     const headingContainer = document.getElementById('page-fixed-heading');
+    if (headingContainer) {
+        headingContainer.style.display = 'block';
+    }
+    
+    document.getElementById('page-heading-text').innerHTML = 'Change Password';
     if (headingContainer && !headingContainer.querySelector('hr')) {
         const hr = document.createElement('hr');
         headingContainer.appendChild(hr);
@@ -164,8 +177,17 @@ async function changePasswordFromPage() {
 
 // ============ PROFILE FUNCTIONS WITH PHOTO UPLOAD ==========
 function showProfile() {
-    document.getElementById('page-heading-text').innerHTML = 'User Profile';
+    // Show header for profile page
+    const pageHeading = document.getElementById('page-heading-text');
+    if (pageHeading) {
+        pageHeading.style.display = 'block';
+    }
     const headingContainer = document.getElementById('page-fixed-heading');
+    if (headingContainer) {
+        headingContainer.style.display = 'block';
+    }
+    
+    document.getElementById('page-heading-text').innerHTML = 'User Profile';
     if (headingContainer && !headingContainer.querySelector('hr')) {
         const hr = document.createElement('hr');
         headingContainer.appendChild(hr);
@@ -239,9 +261,7 @@ async function saveProfile() {
     
     try {
         await apiCall('/users/profile', 'PUT', data);
-        // Silent save - no alert
         showProfile();
-        // Update header with new name if needed
         const profile = await apiCall('/users/profile', 'GET');
         if (profile && profile.photo_url) {
             updateHeaderPhoto(profile.photo_url);
@@ -255,17 +275,13 @@ async function uploadPhoto() {
     const fileInput = document.getElementById('photo-upload');
     const file = fileInput.files[0];
     
-    if (!file) {
-        return;
-    }
+    if (!file) { return; }
     
-    // Check file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
         alert('File size must be less than 2MB');
         return;
     }
     
-    // Check file type
     if (!file.type.startsWith('image/')) {
         alert('Only image files are allowed');
         return;
@@ -274,7 +290,6 @@ async function uploadPhoto() {
     const formData = new FormData();
     formData.append('file', file);
     
-    // Show loading indicator
     const uploadBtn = document.querySelector('.upload-photo-btn');
     const originalText = uploadBtn?.innerText;
     if (uploadBtn) uploadBtn.innerText = '📸 Uploading...';
@@ -282,17 +297,14 @@ async function uploadPhoto() {
     try {
         const response = await fetch('/api/users/upload-photo', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${getAuthToken()}`
-            },
+            headers: { 'Authorization': `Bearer ${getAuthToken()}` },
             body: formData
         });
         
         const result = await response.json();
         if (result.success) {
-            // Silent upload - no alert
-            showProfile(); // Refresh profile page
-            updateHeaderPhoto(result.photo_url); // Update header photo
+            showProfile();
+            updateHeaderPhoto(result.photo_url);
         } else {
             alert('Upload failed: ' + (result.detail || 'Unknown error'));
         }
@@ -300,7 +312,6 @@ async function uploadPhoto() {
         alert('Upload failed: ' + error.message);
     } finally {
         if (uploadBtn) uploadBtn.innerText = originalText || '📸 Upload Photo';
-        // Clear file input
         fileInput.value = '';
     }
 }
@@ -311,9 +322,8 @@ async function deletePhoto() {
     try {
         const result = await apiCall('/users/delete-photo', 'DELETE');
         if (result.success) {
-            // Silent delete - no alert
             showProfile();
-            updateHeaderPhoto(null); // Remove photo from header
+            updateHeaderPhoto(null);
         }
     } catch (error) {
         alert('Failed to delete photo: ' + error.message);
