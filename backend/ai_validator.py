@@ -119,7 +119,7 @@ Answer only "YES" or "NO". Do not explain. Just answer YES or NO."""
     
     steps.append(f"{step_num}. ✅ Job completed")
     
-    # Credits based on number of steps
+    # Credits based on number of steps - ollama serve - git add . && git commit -m "Update" && git push origin main
     estimated_credits = max(1, min(15, len(steps)))
     
     return {

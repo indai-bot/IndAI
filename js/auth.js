@@ -1,5 +1,10 @@
 // ============ AUTH FUNCTIONS ==========
 let tempVerifyEmail = '';
+let tempVerifyAction = '';
+let tempVerifyPassword = '';
+let countdownTimer = null;
+let timeLeft = 60;
+let isTimerExpired = false;
 
 function showLoginPage() {
     const loggedOutContent = document.getElementById('loggedOutContent');
@@ -23,7 +28,7 @@ function showLoginPage() {
                 </div>
                 <div class="login-form-card">
                     <h2>Login</h2>
-                    <div class="login-form-group"><label>Username or Email</label><input type="text" id="loginUser" placeholder="Enter your username or email"></div>
+                    <div class="login-form-group"><label>Email Address</label><input type="email" id="loginUser" placeholder="Enter your email"></div>
                     <div class="login-form-group"><label>Password</label><div class="password-field"><input type="password" id="loginPass" placeholder="Enter your password"><span class="toggle-eye" onclick="togglePassword('loginPass')">👁️</span></div></div>
                     <div class="remember-forgot-row"><label><input type="checkbox" id="rememberMe"> Remember me</label><a class="forgot-link" onclick="showForgotPasswordPage()">Forgot Password?</a></div>
                     <button class="login-submit-btn" onclick="doLogin()">Login →</button>
@@ -34,41 +39,31 @@ function showLoginPage() {
     `;
 }
 
-async function doLogin() { 
-    const email = document.getElementById('loginUser')?.value; 
-    const password = document.getElementById('loginPass')?.value; 
-    const remember = document.getElementById('rememberMe')?.checked; 
+async function doLogin() {
+    const email = document.getElementById('loginUser')?.value;
+    const password = document.getElementById('loginPass')?.value;
     
-    if (!email || !password) { 
-        alert('Please enter email and password'); 
-        return; 
+    if (!email || !password) {
+        alert('Please enter email and password');
+        return;
     }
     
     try {
         const result = await apiCall('/auth/login', 'POST', { email, password });
-        setAuthToken(result.token);
-        setCurrentUser(result.user);
-        setIsLoggedIn(true);
         
-        document.getElementById('loggedInView').style.display = 'flex';
-        document.getElementById('loggedOutView').style.display = 'none';
-        
-        // Load header photo after login
-        await loadHeaderPhoto();
-        
-        showDashboard();
+        if (result.requires_verification) {
+            tempVerifyEmail = email;
+            tempVerifyPassword = password;
+            tempVerifyAction = 'login';
+            isTimerExpired = false;
+            showVerifyCodePage('login', email);
+            setTimeout(() => {
+                sendVerificationEmail('login');
+            }, 100);
+        }
     } catch (error) {
         alert('Login failed: ' + error.message);
     }
-}
-
-function logout() { 
-    setIsLoggedIn(false);
-    clearAuthToken();
-    clearCurrentUser();
-    document.getElementById('loggedInView').style.display = 'none';
-    document.getElementById('loggedOutView').style.display = 'flex';
-    resetToHome(); 
 }
 
 function showRegisterPage() {
@@ -110,20 +105,70 @@ async function doRegister() {
     if (!email.includes('@')) { alert('Enter valid email'); return; }
     
     try {
-        const result = await apiCall('/auth/register', 'POST', { email, password, first_name: firstName, last_name: lastName });
-        alert('Registration successful! Please check your email for verification code.');
-        showVerifyEmailPage(email);
+        const result = await apiCall('/auth/register', 'POST', { 
+            email, password, first_name: firstName, last_name: lastName 
+        });
+        
+        if (result.requires_verification) {
+            tempVerifyEmail = email;
+            tempVerifyPassword = password;
+            tempVerifyAction = 'register';
+            window.tempRegData = { first_name: firstName, last_name: lastName };
+            isTimerExpired = false;
+            showVerifyCodePage('register', email);
+            setTimeout(() => {
+                sendVerificationEmail('register');
+            }, 100);
+        }
     } catch (error) {
         alert('Registration failed: ' + error.message);
     }
 }
 
-function showVerifyEmailPage(email) {
-    tempVerifyEmail = email;
+async function sendVerificationEmail(action) {
+    try {
+        if (action === 'register') {
+            await apiCall('/auth/register', 'POST', {
+                email: tempVerifyEmail,
+                password: tempVerifyPassword,
+                first_name: window.tempRegData?.first_name || '',
+                last_name: window.tempRegData?.last_name || ''
+            });
+        } else if (action === 'login') {
+            await apiCall('/auth/login', 'POST', {
+                email: tempVerifyEmail,
+                password: tempVerifyPassword
+            });
+        } else if (action === 'forgot') {
+            await apiCall('/auth/forgot-password', 'POST', { 
+                email: tempVerifyEmail
+            });
+        }
+        console.log('Verification email sent successfully');
+    } catch (error) {
+        console.error('Failed to send verification email:', error);
+    }
+}
+
+function showVerifyCodePage(action, email) {
     const loggedOutContent = document.getElementById('loggedOutContent');
     if (!loggedOutContent) return;
     
-    document.getElementById('loggedOutHeadingText').innerText = 'Verify Your Email';
+    let title = '';
+    let message = '';
+    
+    if (action === 'register') {
+        title = 'Verify Your Email';
+        message = `Enter the verification code below. A code will be sent to ${email} shortly.`;
+    } else if (action === 'login') {
+        title = 'Verify Login';
+        message = `Enter the verification code below. A code will be sent to ${email} shortly.`;
+    } else if (action === 'forgot') {
+        title = 'Verify Password Reset';
+        message = `Enter the verification code below. A code will be sent to ${email} shortly.`;
+    }
+    
+    document.getElementById('loggedOutHeadingText').innerText = title;
     const headingContainer = document.getElementById('loggedOutFixedHeading');
     if (headingContainer && !headingContainer.querySelector('hr')) {
         const hr = document.createElement('hr');
@@ -135,48 +180,192 @@ function showVerifyEmailPage(email) {
         <div class="register-page-container">
             <div class="register-two-column">
                 <div class="register-info-list">
-                    <div class="login-info-row"><div class="login-label">VERIFY YOUR EMAIL</div><div class="login-value">We sent a 6-digit verification code to ${email}</div></div>
-                    <div class="login-info-row"><div class="login-label">CHECK YOUR INBOX</div><div class="login-value">Enter the code below to verify your account</div></div>
+                    <div class="login-info-row"><div class="login-label">${title.toUpperCase()}</div><div class="login-value">${message}</div></div>
                 </div>
                 <div class="login-form-card">
-                    <h2>Verify Email</h2>
+                    <h2>${title}</h2>
                     <div class="login-form-group"><label>Verification Code</label><input type="text" id="verifyCode" placeholder="Enter 6-digit code"></div>
+                    <div id="timerDisplay" style="text-align: center; font-size: 1.2rem; font-weight: bold; color: #0f172a; margin: 0.5rem 0;">02:00</div>
                     <div class="login-form-group" style="display: flex; gap: 1rem;">
-                        <button class="login-submit-btn" onclick="verifyEmailCode()" style="flex:1;">Verify →</button>
-                        <button class="btn-secondary" onclick="resendVerificationCode()" style="flex:1;">Resend Code</button>
+                        <button class="login-submit-btn" id="verifyBtn" onclick="verifyCodeAction('${action}')" style="flex:1;">Verify →</button>
+                        <button class="btn-secondary" id="resendCodeBtn" onclick="resendCodeAction('${action}')" style="display: none;">Resend Code</button>
                     </div>
                     <div class="register-link"><a onclick="showLoginPage()">Back to Login</a></div>
                 </div>
             </div>
         </div>
     `;
+    
+    // Start timer
+    startTimer();
 }
 
-async function verifyEmailCode() {
+function startTimer() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    timeLeft = 60;
+    isTimerExpired = false;
+    updateTimerDisplay();
+    
+    // Reset button visibility: Verify visible, Resend hidden
+    const verifyBtn = document.getElementById('verifyBtn');
+    const resendBtn = document.getElementById('resendCodeBtn');
+    
+    if (verifyBtn) {
+        verifyBtn.style.display = 'block';
+        verifyBtn.style.flex = '1';
+    }
+    if (resendBtn) {
+        resendBtn.style.display = 'none';
+    }
+    
+    countdownTimer = setInterval(function() {
+        if (timeLeft <= 0) {
+            clearInterval(countdownTimer);
+            isTimerExpired = true;
+            // Timer expired: Verify HIDE, Resend SHOW
+            if (verifyBtn) {
+                verifyBtn.style.display = 'none';
+            }
+            if (resendBtn) {
+                resendBtn.style.display = 'block';
+                resendBtn.style.flex = 'auto';
+            }
+            const timerDisplay = document.getElementById('timerDisplay');
+            if (timerDisplay) {
+                timerDisplay.innerText = '00:00';
+                timerDisplay.style.color = '#ef4444';
+            }
+        } else {
+            timeLeft--;
+            updateTimerDisplay();
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    const timerString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    const timerDisplay = document.getElementById('timerDisplay');
+    if (timerDisplay) {
+        timerDisplay.innerText = timerString;
+        if (timeLeft === 0) {
+            timerDisplay.innerText = '00:00';
+            timerDisplay.style.color = '#ef4444';
+        }
+    }
+}
+
+async function verifyCodeAction(action) {
     const code = document.getElementById('verifyCode')?.value;
     if (!code || code.length !== 6) {
         alert('Please enter 6-digit verification code');
         return;
     }
     
+    // Check if timer has expired
+    if (isTimerExpired) {
+        alert('Session timeout! Please click Resend Code to get a new verification code.');
+        return;
+    }
+    
+    // Timer continues - DO NOT STOP TIMER on wrong code
+    // Only stop timer if verification is successful
+    
     try {
-        await apiCall('/auth/verify-email', 'POST', { email: tempVerifyEmail, code: code });
-        alert('Email verified successfully! You can now login.');
-        showLoginPage();
+        if (action === 'register') {
+            const result = await apiCall('/auth/verify-registration', 'POST', { 
+                email: tempVerifyEmail, 
+                code: code 
+            });
+            // Success - stop timer
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            alert('Registration complete! You can now login.');
+            showLoginPage();
+        } 
+        else if (action === 'login') {
+            const result = await apiCall('/auth/verify-login', 'POST', { 
+                email: tempVerifyEmail, 
+                code: code 
+            });
+            // Success - stop timer
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            setAuthToken(result.token);
+            setCurrentUser(result.user);
+            setIsLoggedIn(true);
+            document.getElementById('loggedInView').style.display = 'flex';
+            document.getElementById('loggedOutView').style.display = 'none';
+            await loadHeaderPhoto();
+            showDashboard();
+        }
+        else if (action === 'forgot') {
+            const result = await apiCall('/auth/verify-forgot', 'POST', { 
+                email: tempVerifyEmail, 
+                code: code 
+            });
+            if (result.verified) {
+                // Success - stop timer
+                if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+                showNewPasswordPage();
+            }
+        }
     } catch (error) {
         alert('Verification failed: ' + error.message);
+        // Timer continues - DO NOTHING to timer
+        // Clear input field for user to try again
+        document.getElementById('verifyCode').value = '';
     }
 }
 
-async function resendVerificationCode() {
+async function resendCodeAction(action) {
     if (!tempVerifyEmail) return;
     
-    try {
-        await apiCall('/auth/resend-code', 'POST', { email: tempVerifyEmail });
-        alert('New verification code sent to your email');
-    } catch (error) {
-        alert('Failed to resend code: ' + error.message);
+    // Reset timer expired flag
+    isTimerExpired = false;
+    
+    // Reset button visibility: Verify visible, Resend hidden
+    const verifyBtn = document.getElementById('verifyBtn');
+    const resendBtn = document.getElementById('resendCodeBtn');
+    
+    if (verifyBtn) {
+        verifyBtn.style.display = 'block';
+        verifyBtn.style.flex = '1';
     }
+    if (resendBtn) {
+        resendBtn.style.display = 'none';
+    }
+    
+    // Reset timer display color
+    const timerDisplay = document.getElementById('timerDisplay');
+    if (timerDisplay) {
+        timerDisplay.style.color = '#0f172a';
+    }
+    
+    startTimer();
+    
+    // Send new verification email
+    sendVerificationEmail(action);
+    
+    alert('New verification code sent to your email');
+    document.getElementById('verifyCode').value = '';
+}
+
+function logout() { 
+    setIsLoggedIn(false);
+    clearAuthToken();
+    clearCurrentUser();
+    document.getElementById('loggedInView').style.display = 'none';
+    document.getElementById('loggedOutView').style.display = 'flex';
+    resetToHome(); 
 }
 
 function showForgotPasswordPage() {
@@ -184,13 +373,12 @@ function showForgotPasswordPage() {
         <div class="forgot-password-container">
             <div class="forgot-two-column">
                 <div class="forgot-info-list">
-                    <div class="login-info-row"><div class="login-label">RESET PASSWORD</div><div class="login-value">Enter your email to receive verification code</div></div>
-                    <div class="login-info-row"><div class="login-label">SECURITY</div><div class="login-value">We'll send a 6-digit code to verify your identity</div></div>
+                    <div class="login-info-row"><div class="login-label">RESET PASSWORD</div><div class="login-value">Enter your email to reset password</div></div>
                 </div>
                 <div class="login-form-card">
                     <h2>Forgot Password</h2>
                     <div class="login-form-group"><label>Email Address</label><input type="email" id="forgotEmailPage" placeholder="Enter your registered email"></div>
-                    <button class="login-submit-btn" onclick="sendForgotCode()">Send Code →</button>
+                    <button class="login-submit-btn" onclick="sendForgotCode()">Continue →</button>
                     <div class="register-link"><a onclick="showLoginPage()">Back to Login</a></div>
                 </div>
             </div>
@@ -204,41 +392,20 @@ async function sendForgotCode() {
     if (!email) { alert('Please enter email address'); return; }
     
     try {
-        await apiCall('/auth/forgot-password', 'POST', { email });
-        tempVerifyEmail = email;
-        alert('Reset code sent to your email');
-        showVerifyResetCodePage();
+        const result = await apiCall('/auth/forgot-password', 'POST', { email });
+        
+        if (result.requires_verification) {
+            tempVerifyEmail = email;
+            tempVerifyAction = 'forgot';
+            isTimerExpired = false;
+            showVerifyCodePage('forgot', email);
+            setTimeout(() => {
+                sendVerificationEmail('forgot');
+            }, 100);
+        }
     } catch (error) {
         alert('Failed: ' + error.message);
     }
-}
-
-function showVerifyResetCodePage() {
-    document.getElementById('loggedOutContent').innerHTML = `
-        <div class="forgot-password-container">
-            <div class="forgot-two-column">
-                <div class="forgot-info-list">
-                    <div class="login-info-row"><div class="login-label">VERIFY CODE</div><div class="login-value">Enter the 6-digit code sent to your email</div></div>
-                </div>
-                <div class="login-form-card">
-                    <h2>Verify Code</h2>
-                    <div class="login-form-group"><label>Verification Code</label><input type="text" id="verifyResetCode" placeholder="Enter 6-digit code"></div>
-                    <button class="login-submit-btn" onclick="verifyResetCode()">Verify →</button>
-                    <div class="register-link"><a onclick="showForgotPasswordPage()">Back</a></div>
-                </div>
-            </div>
-        </div>
-    `;
-    document.getElementById('loggedOutHeadingText').innerText = 'Verify Code';
-}
-
-async function verifyResetCode() {
-    const code = document.getElementById('verifyResetCode')?.value;
-    if (!code || code.length !== 6) {
-        alert('Please enter 6-digit code');
-        return;
-    }
-    showNewPasswordPage();
 }
 
 function showNewPasswordPage() {
@@ -264,6 +431,7 @@ function showNewPasswordPage() {
 async function resetPassword() {
     const np = document.getElementById('newPassPage')?.value;
     const cp = document.getElementById('confirmPassPage')?.value;
+    
     if (!np || !cp) { alert('Please fill both password fields'); return; }
     if (np !== cp) { alert('Passwords do not match'); return; }
     if (np.length < 6) { alert('Password must be at least 6 characters'); return; }
@@ -271,8 +439,7 @@ async function resetPassword() {
     try {
         await apiCall('/auth/reset-password', 'POST', { 
             email: tempVerifyEmail, 
-            code: document.getElementById('verifyResetCode')?.value, 
-            new_password: np 
+            new_password: np
         });
         alert('Password reset successfully! Please login with your new password.');
         showLoginPage();
